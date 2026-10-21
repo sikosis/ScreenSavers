@@ -22,18 +22,41 @@ updating the implementation for Haiku R1/beta6-era systems.
 Build on Haiku with the development tools installed:
 
 ```sh
-cd src
-make
+make -C src
 ```
+
+The resulting add-on is `src/Space`.
 
 Copy the resulting `Space` add-on into the per-user screen saver directory:
 
 ```sh
 mkdir -p "$HOME/config/non-packaged/add-ons/Screen Savers"
-cp objects.*/Space "$HOME/config/non-packaged/add-ons/Screen Savers/Space"
+cp src/Space "$HOME/config/non-packaged/add-ons/Screen Savers/Space"
 ```
 
 Then open **Preferences → ScreenSaver** and select **Space**.
+
+## Packaging
+
+Create an installable Haiku package from the project directory:
+
+```sh
+./build-package.sh
+```
+
+This performs a clean build and creates
+`dist/space_screensaver-1.3.0-1-<architecture>.hpkg`. Package artifacts are
+immutable: increase the revision before rebuilding a package that has already
+been distributed.
+
+Install the package by opening it in HaikuDepot or from Terminal:
+
+```sh
+pkgman install dist/space_screensaver-1.3.0-1-$(getarch).hpkg
+```
+
+Remove any copy in `~/config/non-packaged/add-ons/Screen Savers` before testing
+the packaged version, otherwise the unpackaged add-on may shadow it.
 
 ## Version and licence
 

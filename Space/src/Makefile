@@ -1,6 +1,7 @@
 ## Haiku Generic Makefile v2.6 ##
 
 NAME = Space
+TARGET_DIR = .
 TYPE = SHARED
 APP_MIME_SIG = application/x-vnd.SpaceScreenSaver
 

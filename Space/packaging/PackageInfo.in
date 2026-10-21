@@ -1,0 +1,24 @@
+name space_screensaver
+version @VERSION@-@REVISION@
+architecture @ARCHITECTURE@
+
+summary "Perspective star-field screen saver"
+description "Space is a native Haiku screen saver that renders a smooth, perspective-correct flight through a configurable three-dimensional star field."
+vendor "Space contributors"
+packager "Space contributors"
+
+copyrights {
+	"David Enderson and Space contributors"
+}
+
+licenses {
+	"GNU GPL v2"
+}
+
+provides {
+	space_screensaver = @VERSION@
+}
+
+requires {
+	haiku
+}
