@@ -2,3 +2,7 @@ update-git.sh
 Space/dist/
 Space/src/Space
 Space/src/objects.*
+ttfx-time/dist/
+ttfx-time/src/ttfx-time
+ttfx-time/src/objects.*
+ttfx-time/tests/ttfx-engine-test

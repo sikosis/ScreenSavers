@@ -1,0 +1,27 @@
+name ttfx_time_screensaver
+version @VERSION@-@REVISION@
+architecture @ARCHITECTURE@
+
+summary "Animated text-effects clock screen saver"
+description "ttfx-time is a native Haiku screen saver that displays the current time and cycles through effects adapted from ttfx-haiku and the Omarchy screensaver."
+vendor "ttfx-time contributors"
+packager "ttfx-time contributors"
+
+copyrights {
+	"2026 ttfx-time contributors"
+	"2026 ttfx-haiku contributors"
+	"2026 37signals / omacom-io"
+	"2023 ChrisBuilds"
+}
+
+licenses {
+	"MIT"
+}
+
+provides {
+	ttfx_time_screensaver = @VERSION@
+}
+
+requires {
+	haiku
+}
