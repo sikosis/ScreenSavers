@@ -6,3 +6,7 @@ ttfx-time/dist/
 ttfx-time/src/ttfx-time
 ttfx-time/src/objects.*
 ttfx-time/tests/ttfx-engine-test
+ttfx-text/dist/
+ttfx-text/src/ttfx-text
+ttfx-text/src/objects.*
+ttfx-text/tests/ttfx-text-test

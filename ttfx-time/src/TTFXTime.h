@@ -26,7 +26,8 @@ private:
 	void _ApplySettings();
 	void _BeginEffect(bigtime_t now);
 	bool _EnsureBuffer(const BRect& bounds);
-	void _DrawClock(BView* view, const BRect& bounds, double progress);
+	void _DrawClock(BView* view, const BRect& bounds, double progress,
+		double animationTime);
 	void _DrawMatrixBackdrop(BView* view, const BRect& bounds, double progress);
 
 	ttfx::EffectEngine fEffectEngine;

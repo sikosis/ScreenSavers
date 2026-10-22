@@ -164,6 +164,7 @@ TTFXTimeScreenSaver::Draw(BView* view, int32)
 	const double progress = std::min(1.0,
 		static_cast<double>(now - fEffectStarted)
 			/ (static_cast<double>(fTransitionDuration) * 1000000.0));
+	const double animationTime = static_cast<double>(now - fEffectStarted) / 1000000.0;
 	const BRect targetBounds = view->Bounds();
 	if (!_EnsureBuffer(targetBounds))
 		return;
@@ -175,7 +176,7 @@ TTFXTimeScreenSaver::Draw(BView* view, int32)
 	fOffscreenView->FillRect(bounds, B_SOLID_LOW);
 	if (fEffectEngine.CurrentEffect() == ttfx::Effect::kMatrix)
 		_DrawMatrixBackdrop(fOffscreenView, bounds, progress);
-	_DrawClock(fOffscreenView, bounds, progress);
+	_DrawClock(fOffscreenView, bounds, progress, animationTime);
 	fOffscreenView->Sync();
 	fOffscreenBitmap->Unlock();
 
@@ -258,7 +259,8 @@ TTFXTimeScreenSaver::_EnsureBuffer(const BRect& bounds)
 
 
 void
-TTFXTimeScreenSaver::_DrawClock(BView* view, const BRect& bounds, double progress)
+TTFXTimeScreenSaver::_DrawClock(BView* view, const BRect& bounds, double progress,
+	double animationTime)
 {
 	const std::string clock = format_time(fShowSeconds, fUse24HourTime);
 	if (clock.empty())
@@ -299,7 +301,7 @@ TTFXTimeScreenSaver::_DrawClock(BView* view, const BRect& bounds, double progres
 		const float x = left + cells[index].column * cellWidth;
 		const float y = firstBaseline + cells[index].row * lineHeight;
 		const ttfx::GlyphState state = fEffectEngine.Transform(index, cells.size(),
-			progress, x, y, bounds.Width(), bounds.Height());
+			progress, animationTime, x, y, bounds.Width(), bounds.Height());
 
 		BFont glyphFont(font);
 		glyphFont.SetSize(fontSize * static_cast<float>(state.scale));

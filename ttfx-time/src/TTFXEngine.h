@@ -45,7 +45,8 @@ public:
 	void SetEffect(Effect effect, uint64_t seed);
 	Effect CurrentEffect() const;
 	GlyphState Transform(std::size_t index, std::size_t count,
-		double progress, double x, double y, double width, double height) const;
+		double progress, double animationTime, double x, double y,
+		double width, double height) const;
 
 	static const char* EffectName(Effect effect);
 	static Effect NextEffect(Effect effect);

@@ -18,6 +18,7 @@ modes.
 - Nine rotating effects: Expand, Slide, Wipe, Rain, Decrypt, Scattered, Waves,
   Colour shift and Matrix
 - Seeded random colour palettes that remain stable for each effect
+- Continuous colour movement during the Colour shift hold period
 - Random or sequential effect order
 - Configurable effect and transition durations
 - Optional seconds and 12- or 24-hour time

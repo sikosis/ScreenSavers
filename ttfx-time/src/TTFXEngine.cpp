@@ -51,26 +51,30 @@ EffectEngine::CurrentEffect() const
 
 GlyphState
 EffectEngine::Transform(std::size_t index, std::size_t count, double progress,
-	double x, double y, double width, double height) const
+	double animationTime, double x, double y, double width, double height) const
 {
 	progress = _Clamp(progress, 0.0, 1.0);
-	const double eased = _Ease(progress);
 	const double position = count > 1
 		? static_cast<double>(index) / static_cast<double>(count - 1) : 0.5;
 	GlyphState state = {x, y, 1.0, 1.0, _Gradient(position), '\0'};
 
 	switch (fEffect) {
-		case Effect::kExpand:
-			state.x = width / 2.0 + (x - width / 2.0) * eased;
-			state.y = height / 2.0 + (y - height / 2.0) * eased;
-			state.scale = 0.15 + eased * 0.85;
-			state.opacity = eased;
+		case Effect::kExpand: {
+			const double delay = position * 0.12;
+			const double local = _Ease(_Clamp((progress - delay) / 0.88, 0.0, 1.0));
+			state.x = width / 2.0 + (x - width / 2.0) * local;
+			state.y = height / 2.0 + (y - height / 2.0) * local;
+			state.scale = 0.2 + local * 0.8;
+			state.opacity = local;
 			break;
+		}
 
 		case Effect::kSlide: {
-			const double delay = position * 0.32;
-			const double local = _Ease(_Clamp((progress - delay) / 0.68, 0.0, 1.0));
-			state.x = -width * 0.3 + (x + width * 0.3) * local;
+			const double delay = position * 0.25;
+			const double local = _Ease(_Clamp((progress - delay) / 0.75, 0.0, 1.0));
+			state.x = -width * 0.12 + (x + width * 0.12) * local;
+			state.y = y + std::sin(position * 4.0 * kPi) * height * 0.035
+				* (1.0 - local);
 			state.opacity = local;
 			break;
 		}
@@ -83,11 +87,13 @@ EffectEngine::Transform(std::size_t index, std::size_t count, double progress,
 		}
 
 		case Effect::kRain: {
-			const double delay = _Random(index, 1) * 0.4;
-			const double local = _Ease(_Clamp((progress - delay) / 0.6, 0.0, 1.0));
-			state.y = -height * (0.15 + _Random(index, 2) * 0.75)
-				+ (y + height * (0.15 + _Random(index, 2) * 0.75)) * local;
-			state.opacity = local;
+			const double delay = _Random(index, 1) * 0.32;
+			const double raw = _Clamp((progress - delay) / 0.68, 0.0, 1.0);
+			const double local = _Ease(raw);
+			const double startY = -height * (0.08 + _Random(index, 2) * 0.48);
+			state.y = startY + (y - startY) * local
+				+ std::sin(raw * kPi) * height * 0.025;
+			state.opacity = _Clamp(raw * 2.2, 0.0, 1.0);
 			break;
 		}
 
@@ -96,7 +102,7 @@ EffectEngine::Transform(std::size_t index, std::size_t count, double progress,
 			state.opacity = _Clamp(progress * 2.5, 0.0, 1.0);
 			if (progress < threshold) {
 				static const char symbols[] = "0123456789ABCDEF#$%&@";
-				const uint64_t frame = static_cast<uint64_t>(progress * 36.0);
+				const uint64_t frame = static_cast<uint64_t>(animationTime * 18.0);
 				state.replacement = symbols[_Mix(fSeed + index * 37 + frame)
 					% (sizeof(symbols) - 1)];
 				state.colour = {67, 255, 153};
@@ -105,37 +111,39 @@ EffectEngine::Transform(std::size_t index, std::size_t count, double progress,
 		}
 
 		case Effect::kScattered: {
+			const double eased = _Ease(progress);
 			const double startX = _Random(index, 4) * width;
 			const double startY = _Random(index, 5) * height;
 			state.x = startX + (x - startX) * eased;
 			state.y = startY + (y - startY) * eased;
-			state.opacity = 0.25 + eased * 0.75;
+			state.opacity = _Clamp(progress * 2.0, 0.0, 1.0);
 			break;
 		}
 
 		case Effect::kWaves: {
 			const double local = _Clamp(progress * 1.35 - position * 0.35, 0.0, 1.0);
-			state.y = y + std::sin((position * 3.0 - progress * 2.0) * 2.0 * kPi)
-				* height * 0.12 * (1.0 - local);
+			state.y = y + std::sin((position * 3.0 - animationTime * 0.8)
+				* 2.0 * kPi) * height * 0.065 * (1.0 - local);
 			state.opacity = _Clamp(local * 2.0, 0.0, 1.0);
 			break;
 		}
 
 		case Effect::kColourShift: {
-			const double shift = std::fmod(position + progress * 1.5, 1.0);
+			const double shift = std::fmod(position + animationTime * 0.16, 1.0);
 			state.colour = _Gradient(shift);
 			state.opacity = _Clamp(progress * 3.0, 0.0, 1.0);
 			break;
 		}
 
 		case Effect::kMatrix: {
-			const double delay = _Random(index, 6) * 0.58;
-			const double local = _Clamp((progress - delay) / 0.42, 0.0, 1.0);
-			state.y = y - (1.0 - _Ease(local)) * height * (0.35 + _Random(index, 7));
+			const double delay = _Random(index, 6) * 0.5;
+			const double local = _Clamp((progress - delay) / 0.5, 0.0, 1.0);
+			state.y = y - (1.0 - _Ease(local)) * height
+				* (0.2 + _Random(index, 7) * 0.55);
 			state.opacity = _Clamp(local * 2.0, 0.0, 1.0);
 			state.colour = local < 0.75 ? Colour{48, 255, 112} : _Gradient(position);
 			if (local < 0.88) {
-				const uint64_t frame = static_cast<uint64_t>(progress * 48.0);
+				const uint64_t frame = static_cast<uint64_t>(animationTime * 20.0);
 				state.replacement = ((_Mix(fSeed + index * 53 + frame) & 1) == 0)
 					? '0' : '1';
 			}

@@ -1,0 +1,15 @@
+resource app_signature "application/x-vnd.TTFXTextScreenSaver";
+
+resource app_version {
+	major = 1,
+	middle = 0,
+	minor = 0,
+
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+
+	short_info = "ttfx-text screen saver",
+	long_info = "ttfx-text 1.0.0, custom animated block text for Haiku"
+};
+
+resource app_flags B_SINGLE_LAUNCH;
