@@ -3,7 +3,7 @@ CXXFLAGS ?= -O2
 CXXFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -Werror
 
 TARGET = ttfx-engine-test
-SOURCES = TTFXEngineTest.cpp ../src/TTFXEngine.cpp
+SOURCES = TTFXEngineTest.cpp ../src/TTFXClock.cpp ../src/TTFXEngine.cpp
 
 .PHONY: all test clean
 

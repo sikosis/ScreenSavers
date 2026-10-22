@@ -14,12 +14,13 @@ modes.
 
 ## Features
 
+- A 5×7 ASCII-block clock face whose individual cells participate in effects
 - Nine rotating effects: Expand, Slide, Wipe, Rain, Decrypt, Scattered, Waves,
   Colour shift and Matrix
 - Random or sequential effect order
 - Configurable effect and transition durations
 - Optional seconds and 12- or 24-hour time
-- Smooth 60 frames-per-second native rendering
+- Double-buffered, 60 frames-per-second native rendering
 - Deterministic, host-testable effect geometry
 - Haiku R1/beta6-compatible build and HPKG packaging
 

@@ -9,11 +9,13 @@
 
 
 class BView;
+class BBitmap;
 
 
 class TTFXTimeScreenSaver : public BScreenSaver {
 public:
 	TTFXTimeScreenSaver(BMessage* message, image_id image);
+	~TTFXTimeScreenSaver() override;
 
 	status_t SaveState(BMessage* into) const override;
 	void StartConfig(BView* view) override;
@@ -23,11 +25,14 @@ public:
 private:
 	void _ApplySettings();
 	void _BeginEffect(bigtime_t now);
+	bool _EnsureBuffer(const BRect& bounds);
 	void _DrawClock(BView* view, const BRect& bounds, double progress);
 	void _DrawMatrixBackdrop(BView* view, const BRect& bounds, double progress);
 
 	ttfx::EffectEngine fEffectEngine;
 	std::minstd_rand fRandomEngine;
+	BBitmap* fOffscreenBitmap;
+	BView* fOffscreenView;
 	bigtime_t fEffectStarted;
 	int32 fEffectInterval;
 	int32 fTransitionDuration;

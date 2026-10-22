@@ -5,7 +5,7 @@ TARGET_DIR = .
 TYPE = SHARED
 APP_MIME_SIG = application/x-vnd.TTFXTimeScreenSaver
 
-SRCS = TTFXTime.cpp TTFXTimeConfigView.cpp TTFXEngine.cpp
+SRCS = TTFXTime.cpp TTFXTimeConfigView.cpp TTFXClock.cpp TTFXEngine.cpp
 RDEFS = TTFXTime.rdef
 RSRCS =
 

@@ -1,7 +1,9 @@
 #include "TTFXTime.h"
 
+#include "TTFXClock.h"
 #include "TTFXTimeConfigView.h"
 
+#include <Bitmap.h>
 #include <Font.h>
 #include <InterfaceDefs.h>
 #include <Message.h>
@@ -25,6 +27,7 @@ const char* const kUse24HourTimeKey = "use_24_hour_time";
 const char* const kRandomiseEffectsKey = "randomise_effects";
 
 const bigtime_t kFrameInterval = 16667;
+const int32 kClockRows = 7;
 
 
 std::string
@@ -64,6 +67,8 @@ TTFXTimeScreenSaver::TTFXTimeScreenSaver(BMessage* message, image_id image)
 	:
 	BScreenSaver(message, image),
 	fRandomEngine(static_cast<uint32>(system_time())),
+	fOffscreenBitmap(nullptr),
+	fOffscreenView(nullptr),
 	fEffectStarted(0),
 	fEffectInterval(12),
 	fTransitionDuration(3),
@@ -80,6 +85,13 @@ TTFXTimeScreenSaver::TTFXTimeScreenSaver(BMessage* message, image_id image)
 		message->FindBool(kRandomiseEffectsKey, &fRandomiseEffects);
 	}
 	_ApplySettings();
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+TTFXTimeScreenSaver::~TTFXTimeScreenSaver()
+{
+	delete fOffscreenBitmap;
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -128,10 +140,8 @@ TTFXTimeScreenSaver::StartSaver(BView* view, bool preview)
 	fEffectEngine.SetEffect(ttfx::Effect::kExpand, fRandomEngine());
 	_BeginEffect(system_time());
 
-	view->SetViewColor(B_TRANSPARENT_COLOR);
+	view->SetViewColor(4, 6, 12);
 	view->SetLowColor(4, 6, 12);
-	view->SetDrawingMode(B_OP_ALPHA);
-	view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_OVERLAY);
 	view->FillRect(view->Bounds(), B_SOLID_LOW);
 	SetTickSize(kFrameInterval);
 	return B_OK;
@@ -154,13 +164,23 @@ TTFXTimeScreenSaver::Draw(BView* view, int32)
 	const double progress = std::min(1.0,
 		static_cast<double>(now - fEffectStarted)
 			/ (static_cast<double>(fTransitionDuration) * 1000000.0));
-	const BRect bounds = view->Bounds();
-	view->SetLowColor(4, 6, 12);
-	view->FillRect(bounds, B_SOLID_LOW);
+	const BRect targetBounds = view->Bounds();
+	if (!_EnsureBuffer(targetBounds))
+		return;
+	if (!fOffscreenBitmap->Lock())
+		return;
 
+	const BRect bounds = fOffscreenBitmap->Bounds();
+	fOffscreenView->SetLowColor(4, 6, 12);
+	fOffscreenView->FillRect(bounds, B_SOLID_LOW);
 	if (fEffectEngine.CurrentEffect() == ttfx::Effect::kMatrix)
-		_DrawMatrixBackdrop(view, bounds, progress);
-	_DrawClock(view, bounds, progress);
+		_DrawMatrixBackdrop(fOffscreenView, bounds, progress);
+	_DrawClock(fOffscreenView, bounds, progress);
+	fOffscreenView->Sync();
+	fOffscreenBitmap->Unlock();
+
+	view->SetDrawingMode(B_OP_COPY);
+	view->DrawBitmap(fOffscreenBitmap, bounds, targetBounds);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -193,6 +213,50 @@ TTFXTimeScreenSaver::_BeginEffect(bigtime_t now)
 //---------------------------------------------------------------------------------------------------------------------------------//
 
 
+bool
+TTFXTimeScreenSaver::_EnsureBuffer(const BRect& bounds)
+{
+	const BRect bitmapBounds(0.0f, 0.0f, bounds.Width(), bounds.Height());
+	if (fOffscreenBitmap != nullptr
+		&& fOffscreenBitmap->Bounds() == bitmapBounds) {
+		return true;
+	}
+
+	delete fOffscreenBitmap;
+	fOffscreenBitmap = new(std::nothrow) BBitmap(bitmapBounds,
+		B_BITMAP_ACCEPTS_VIEWS, B_RGBA32);
+	fOffscreenView = nullptr;
+	if (fOffscreenBitmap == nullptr || fOffscreenBitmap->InitCheck() != B_OK) {
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		return false;
+	}
+
+	fOffscreenView = new(std::nothrow) BView(bitmapBounds, "ttfx-time buffer",
+		B_FOLLOW_NONE, B_WILL_DRAW);
+	if (fOffscreenView == nullptr) {
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		return false;
+	}
+
+	if (!fOffscreenBitmap->Lock()) {
+		delete fOffscreenView;
+		fOffscreenView = nullptr;
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		return false;
+	}
+	fOffscreenBitmap->AddChild(fOffscreenView);
+	fOffscreenView->SetViewColor(B_TRANSPARENT_COLOR);
+	fOffscreenView->SetDrawingMode(B_OP_ALPHA);
+	fOffscreenView->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_OVERLAY);
+	fOffscreenBitmap->Unlock();
+	return true;
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
 void
 TTFXTimeScreenSaver::_DrawClock(BView* view, const BRect& bounds, double progress)
 {
@@ -200,37 +264,54 @@ TTFXTimeScreenSaver::_DrawClock(BView* view, const BRect& bounds, double progres
 	if (clock.empty())
 		return;
 
-	BFont font(be_bold_font);
+	std::vector<ttfx::ClockCell> cells;
+	const int32 totalColumns = ttfx::BuildClockCells(clock, cells);
+	if (cells.empty() || totalColumns <= 0)
+		return;
+
+	BFont font(be_fixed_font);
 	const float availableWidth = bounds.Width() * (fPreview ? 0.84f : 0.78f);
-	const float estimatedSize = availableWidth
-		/ static_cast<float>(clock.size()) * 1.52f;
-	const float fontSize = std::max(18.0f,
-		std::min(estimatedSize, bounds.Height() * (fPreview ? 0.34f : 0.28f)));
+	const float availableHeight = bounds.Height() * (fPreview ? 0.64f : 0.58f);
+	float fontSize = std::max(5.0f, availableHeight / kClockRows * 0.78f);
 	font.SetSize(fontSize);
 
-	const float textWidth = font.StringWidth(clock.c_str());
 	font_height metrics;
 	font.GetHeight(&metrics);
-	const float baseline = bounds.top + bounds.Height() / 2.0f
-		+ (metrics.ascent - metrics.descent) / 2.0f;
-	float cursor = bounds.left + (bounds.Width() - textWidth) / 2.0f;
+	float cellWidth = font.StringWidth("##");
+	float lineHeight = metrics.ascent + metrics.descent + metrics.leading;
+	const float initialWidth = totalColumns * cellWidth;
+	if (initialWidth > availableWidth) {
+		fontSize *= availableWidth / initialWidth;
+		font.SetSize(fontSize);
+		font.GetHeight(&metrics);
+		cellWidth = font.StringWidth("##");
+		lineHeight = metrics.ascent + metrics.descent + metrics.leading;
+	}
 
-	for (std::size_t index = 0; index < clock.size(); index++) {
-		char glyphText[2] = {clock[index], '\0'};
-		const float glyphWidth = font.StringWidth(glyphText);
-		const ttfx::GlyphState state = fEffectEngine.Transform(index, clock.size(),
-			progress, cursor, baseline, bounds.Width(), bounds.Height());
+	const float artWidth = totalColumns * cellWidth;
+	const float artHeight = kClockRows * lineHeight;
+	const float left = bounds.left + (bounds.Width() - artWidth) / 2.0f;
+	const float artTop = bounds.top + (bounds.Height() - artHeight) / 2.0f;
+	const float firstBaseline = artTop + metrics.ascent;
+
+	for (std::size_t index = 0; index < cells.size(); index++) {
+		const float x = left + cells[index].column * cellWidth;
+		const float y = firstBaseline + cells[index].row * lineHeight;
+		const ttfx::GlyphState state = fEffectEngine.Transform(index, cells.size(),
+			progress, x, y, bounds.Width(), bounds.Height());
 
 		BFont glyphFont(font);
 		glyphFont.SetSize(fontSize * static_cast<float>(state.scale));
 		view->SetFont(&glyphFont);
 		view->SetHighColor(state.colour.red, state.colour.green, state.colour.blue,
 			static_cast<uint8>(std::lround(state.opacity * 255.0)));
-		if (state.replacement != '\0')
-			glyphText[0] = state.replacement;
-		view->DrawString(glyphText, BPoint(static_cast<float>(state.x),
+		char block[3] = {'#', '#', '\0'};
+		if (state.replacement != '\0') {
+			block[0] = state.replacement;
+			block[1] = state.replacement;
+		}
+		view->DrawString(block, BPoint(static_cast<float>(state.x),
 			static_cast<float>(state.y)));
-		cursor += glyphWidth;
 	}
 
 	BFont labelFont(be_plain_font);
@@ -243,7 +324,7 @@ TTFXTimeScreenSaver::_DrawClock(BView* view, const BRect& bounds, double progres
 		static_cast<uint8>(std::lround(std::min(1.0, progress * 2.0) * 210.0)));
 	view->DrawString(effectName, BPoint(bounds.left
 		+ (bounds.Width() - labelWidth) / 2.0f,
-		baseline + metrics.descent + fontSize * 0.3f));
+		artTop + artHeight + fontSize * 0.35f));
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 

@@ -1,3 +1,4 @@
+#include "../src/TTFXClock.h"
 #include "../src/TTFXEngine.h"
 
 #include <cassert>
@@ -30,6 +31,27 @@ test_effect_names_and_rotation()
 		assert(effect == static_cast<Effect>(index));
 	}
 	assert(EffectEngine::NextEffect(effect) == Effect::kExpand);
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+void
+test_clock_is_built_from_block_cells()
+{
+	std::vector<ttfx::ClockCell> cells;
+	const int32_t columns = ttfx::BuildClockCells("12:34:56", cells);
+	assert(columns == 39);
+	assert(cells.size() > 100);
+	for (const ttfx::ClockCell& cell : cells) {
+		assert(cell.column >= 0);
+		assert(cell.column < columns);
+		assert(cell.row >= 0);
+		assert(cell.row < 7);
+	}
+
+	const int32_t singleDigitColumns = ttfx::BuildClockCells("1", cells);
+	assert(singleDigitColumns == 5);
+	assert(cells.size() == 10);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -96,6 +118,7 @@ int
 main()
 {
 	test_effect_names_and_rotation();
+	test_clock_is_built_from_block_cells();
 	test_completed_effects_reach_the_destination();
 	test_seeded_effects_are_deterministic();
 	test_progress_is_clamped();
