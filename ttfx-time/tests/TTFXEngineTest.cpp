@@ -89,7 +89,33 @@ test_seeded_effects_are_deterministic()
 			300.0 + index * 40.0, 500.0, 1280.0, 720.0);
 		assert(nearly_equal(firstState.x, secondState.x));
 		assert(nearly_equal(firstState.y, secondState.y));
+		assert(firstState.colour.red == secondState.colour.red);
+		assert(firstState.colour.green == secondState.colour.green);
+		assert(firstState.colour.blue == secondState.colour.blue);
 	}
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+void
+test_effect_seeds_select_different_palettes()
+{
+	ttfx::EffectEngine engine;
+	engine.SetEffect(ttfx::Effect::kExpand, 0);
+	const ttfx::Colour first = engine.Transform(0, 3, 1.0,
+		100.0, 100.0, 800.0, 600.0).colour;
+	bool foundDifferentColour = false;
+	for (uint64_t seed = 1; seed < 32; seed++) {
+		engine.SetEffect(ttfx::Effect::kExpand, seed);
+		const ttfx::Colour colour = engine.Transform(0, 3, 1.0,
+			100.0, 100.0, 800.0, 600.0).colour;
+		if (colour.red != first.red || colour.green != first.green
+			|| colour.blue != first.blue) {
+			foundDifferentColour = true;
+			break;
+		}
+	}
+	assert(foundDifferentColour);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -121,6 +147,7 @@ main()
 	test_clock_is_built_from_block_cells();
 	test_completed_effects_reach_the_destination();
 	test_seeded_effects_are_deterministic();
+	test_effect_seeds_select_different_palettes();
 	test_progress_is_clamped();
 	std::cout << "ttfx effect engine tests passed\n";
 	return 0;

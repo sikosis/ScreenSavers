@@ -277,14 +277,15 @@ TTFXTimeScreenSaver::_DrawClock(BView* view, const BRect& bounds, double progres
 
 	font_height metrics;
 	font.GetHeight(&metrics);
-	float cellWidth = font.StringWidth("##");
+	const char* const blockText = "\xE2\x96\x88\xE2\x96\x88";
+	float cellWidth = font.StringWidth(blockText);
 	float lineHeight = metrics.ascent + metrics.descent + metrics.leading;
 	const float initialWidth = totalColumns * cellWidth;
 	if (initialWidth > availableWidth) {
 		fontSize *= availableWidth / initialWidth;
 		font.SetSize(fontSize);
 		font.GetHeight(&metrics);
-		cellWidth = font.StringWidth("##");
+		cellWidth = font.StringWidth(blockText);
 		lineHeight = metrics.ascent + metrics.descent + metrics.leading;
 	}
 
@@ -305,10 +306,12 @@ TTFXTimeScreenSaver::_DrawClock(BView* view, const BRect& bounds, double progres
 		view->SetFont(&glyphFont);
 		view->SetHighColor(state.colour.red, state.colour.green, state.colour.blue,
 			static_cast<uint8>(std::lround(state.opacity * 255.0)));
-		char block[3] = {'#', '#', '\0'};
+		const char* block = blockText;
+		char replacement[3] = {'\0', '\0', '\0'};
 		if (state.replacement != '\0') {
-			block[0] = state.replacement;
-			block[1] = state.replacement;
+			replacement[0] = state.replacement;
+			replacement[1] = state.replacement;
+			block = replacement;
 		}
 		view->DrawString(block, BPoint(static_cast<float>(state.x),
 			static_cast<float>(state.y)));

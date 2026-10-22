@@ -14,9 +14,10 @@ modes.
 
 ## Features
 
-- A 5×7 ASCII-block clock face whose individual cells participate in effects
+- A 5×7 solid-block clock face whose individual cells participate in effects
 - Nine rotating effects: Expand, Slide, Wipe, Rain, Decrypt, Scattered, Waves,
   Colour shift and Matrix
+- Seeded random colour palettes that remain stable for each effect
 - Random or sequential effect order
 - Configurable effect and transition durations
 - Optional seconds and 12- or 24-hour time
@@ -39,8 +40,8 @@ screen saver add-on itself requires Haiku headers and produces `src/ttfx-time`.
 Copy the add-on into the per-user screen saver directory:
 
 ```sh
-mkdir -p "$HOME/config/non-packaged/add-ons/Screen Savers"
-cp src/ttfx-time "$HOME/config/non-packaged/add-ons/Screen Savers/ttfx-time"
+mkdir -p "/boot/home/config/non-packaged/add-ons/Screen Savers"
+cp src/ttfx-time "/boot/home/config/non-packaged/add-ons/Screen Savers/ttfx-time"
 ```
 
 Then open **Preferences → ScreenSaver** and select **ttfx-time**.
@@ -65,8 +66,8 @@ pkgman install dist/ttfx_time_screensaver-1.0.0-1-$(getarch).hpkg
 ```
 
 Remove any copy from
-`~/config/non-packaged/add-ons/Screen Savers` before testing the packaged
-version, otherwise the unpackaged add-on may shadow it.
+`/boot/home/config/non-packaged/add-ons/Screen Savers` before testing the
+packaged version, otherwise the unpackaged add-on may shadow it.
 
 ## Version and licence
 

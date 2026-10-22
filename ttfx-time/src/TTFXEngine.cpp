@@ -215,24 +215,33 @@ EffectEngine::_Random(std::size_t index, uint64_t salt) const
 Colour
 EffectEngine::_Gradient(double amount) const
 {
-	const Colour purple = {138, 43, 226};
-	const Colour cyan = {0, 209, 255};
-	const Colour white = {255, 255, 255};
+	static const Colour palettes[][3] = {
+		{{138, 43, 226}, {0, 209, 255}, {255, 255, 255}},
+		{{255, 72, 120}, {255, 176, 69}, {255, 246, 189}},
+		{{35, 210, 92}, {62, 255, 213}, {218, 255, 241}},
+		{{72, 125, 231}, {171, 157, 255}, {255, 209, 243}},
+		{{255, 75, 43}, {255, 210, 63}, {255, 255, 224}},
+		{{0, 174, 255}, {127, 255, 212}, {240, 255, 255}}
+	};
+	const std::size_t paletteCount = sizeof(palettes) / sizeof(palettes[0]);
+	const Colour* palette = palettes[_Mix(fSeed) % paletteCount];
+	if ((_Mix(fSeed + 1) & 1) != 0)
+		amount = 1.0 - amount;
 	amount = _Clamp(amount, 0.0, 1.0);
 	if (amount <= 0.5) {
 		const double local = amount * 2.0;
 		return {
-			interpolate_channel(purple.red, cyan.red, local),
-			interpolate_channel(purple.green, cyan.green, local),
-			interpolate_channel(purple.blue, cyan.blue, local)
+			interpolate_channel(palette[0].red, palette[1].red, local),
+			interpolate_channel(palette[0].green, palette[1].green, local),
+			interpolate_channel(palette[0].blue, palette[1].blue, local)
 		};
 	}
 
 	const double local = (amount - 0.5) * 2.0;
 	return {
-		interpolate_channel(cyan.red, white.red, local),
-		interpolate_channel(cyan.green, white.green, local),
-		interpolate_channel(cyan.blue, white.blue, local)
+		interpolate_channel(palette[1].red, palette[2].red, local),
+		interpolate_channel(palette[1].green, palette[2].green, local),
+		interpolate_channel(palette[1].blue, palette[2].blue, local)
 	};
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
