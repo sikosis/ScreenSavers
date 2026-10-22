@@ -40,6 +40,7 @@ private:
 	bool fShowSeconds;
 	bool fUse24HourTime;
 	bool fRandomiseEffects;
+	bool fShowEffectName;
 	bool fPreview;
 };
 

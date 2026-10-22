@@ -21,6 +21,7 @@ modes.
 - Continuous colour movement during the Colour shift hold period
 - Random or sequential effect order
 - Configurable effect and transition durations
+- Optional effect-name label for debugging or effect identification
 - Optional seconds and 12- or 24-hour time
 - Double-buffered, 60 frames-per-second native rendering
 - Deterministic, host-testable effect geometry

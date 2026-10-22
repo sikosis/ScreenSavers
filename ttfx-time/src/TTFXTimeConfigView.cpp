@@ -14,7 +14,8 @@ enum {
 	kTransitionDurationChanged = 'trdu',
 	kShowSecondsChanged = 'secs',
 	kUse24HourTimeChanged = '24hr',
-	kRandomiseEffectsChanged = 'rand'
+	kRandomiseEffectsChanged = 'rand',
+	kShowEffectNameChanged = 'name'
 };
 
 }
@@ -22,7 +23,7 @@ enum {
 
 TTFXTimeConfigView::TTFXTimeConfigView(BRect frame, int32* effectInterval,
 	int32* transitionDuration, bool* showSeconds, bool* use24HourTime,
-	bool* randomiseEffects)
+	bool* randomiseEffects, bool* showEffectName)
 	:
 	BView(frame, "ttfx-time settings", B_FOLLOW_ALL, B_WILL_DRAW),
 	fEffectIntervalSlider(new BSlider("effect interval", "Change effect every",
@@ -35,11 +36,14 @@ TTFXTimeConfigView::TTFXTimeConfigView(BRect frame, int32* effectInterval,
 		new BMessage(kUse24HourTimeChanged))),
 	fRandomiseEffectsCheckBox(new BCheckBox("randomise", "Randomise effect order",
 		new BMessage(kRandomiseEffectsChanged))),
+	fShowEffectNameCheckBox(new BCheckBox("show effect name", "Show effect name",
+		new BMessage(kShowEffectNameChanged))),
 	fEffectInterval(effectInterval),
 	fTransitionDuration(transitionDuration),
 	fShowSeconds(showSeconds),
 	fUse24HourTime(use24HourTime),
-	fRandomiseEffects(randomiseEffects)
+	fRandomiseEffects(randomiseEffects),
+	fShowEffectName(showEffectName)
 {
 	SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
 	BStringView* title = new BStringView("title", "ttfx-time");
@@ -59,6 +63,8 @@ TTFXTimeConfigView::TTFXTimeConfigView(BRect frame, int32* effectInterval,
 	fUse24HourTimeCheckBox->SetValue(*fUse24HourTime ? B_CONTROL_ON : B_CONTROL_OFF);
 	fRandomiseEffectsCheckBox->SetValue(*fRandomiseEffects
 		? B_CONTROL_ON : B_CONTROL_OFF);
+	fShowEffectNameCheckBox->SetValue(*fShowEffectName
+		? B_CONTROL_ON : B_CONTROL_OFF);
 
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
@@ -70,6 +76,7 @@ TTFXTimeConfigView::TTFXTimeConfigView(BRect frame, int32* effectInterval,
 		.Add(fShowSecondsCheckBox)
 		.Add(fUse24HourTimeCheckBox)
 		.Add(fRandomiseEffectsCheckBox)
+		.Add(fShowEffectNameCheckBox)
 		.AddGlue();
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
@@ -84,6 +91,7 @@ TTFXTimeConfigView::AttachedToWindow()
 	fShowSecondsCheckBox->SetTarget(this);
 	fUse24HourTimeCheckBox->SetTarget(this);
 	fRandomiseEffectsCheckBox->SetTarget(this);
+	fShowEffectNameCheckBox->SetTarget(this);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -106,6 +114,9 @@ TTFXTimeConfigView::MessageReceived(BMessage* message)
 			break;
 		case kRandomiseEffectsChanged:
 			*fRandomiseEffects = fRandomiseEffectsCheckBox->Value() == B_CONTROL_ON;
+			break;
+		case kShowEffectNameChanged:
+			*fShowEffectName = fShowEffectNameCheckBox->Value() == B_CONTROL_ON;
 			break;
 		default:
 			BView::MessageReceived(message);

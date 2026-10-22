@@ -13,7 +13,8 @@ class BTextControl;
 class TTFXTextConfigView : public BView {
 public:
 	TTFXTextConfigView(BRect frame, BString* text, int32* effectInterval,
-		int32* transitionDuration, bool* randomiseEffects);
+		int32* transitionDuration, bool* randomiseEffects,
+		bool* showEffectName);
 
 	void AttachedToWindow() override;
 	void MessageReceived(BMessage* message) override;
@@ -23,10 +24,12 @@ private:
 	BSlider* fEffectIntervalSlider;
 	BSlider* fTransitionDurationSlider;
 	BCheckBox* fRandomiseEffectsCheckBox;
+	BCheckBox* fShowEffectNameCheckBox;
 	BString* fText;
 	int32* fEffectInterval;
 	int32* fTransitionDuration;
 	bool* fRandomiseEffects;
+	bool* fShowEffectName;
 };
 
 

@@ -40,6 +40,7 @@ private:
 	int32 fEffectInterval;
 	int32 fTransitionDuration;
 	bool fRandomiseEffects;
+	bool fShowEffectName;
 	bool fPreview;
 };
 

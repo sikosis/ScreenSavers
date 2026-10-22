@@ -19,6 +19,7 @@ mark pattern.
   shift and Matrix
 - Random or sequential effect order
 - Configurable effect and transition durations
+- Optional effect-name label for debugging or effect identification
 - Seeded random colour palettes and continuous Colour shift animation
 - Double-buffered, 60 frames-per-second native rendering
 - Full-screen and preference-panel preview modes

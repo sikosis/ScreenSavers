@@ -22,6 +22,7 @@ const char* const kTextKey = "text";
 const char* const kEffectIntervalKey = "effect_interval";
 const char* const kTransitionDurationKey = "transition_duration";
 const char* const kRandomiseEffectsKey = "randomise_effects";
+const char* const kShowEffectNameKey = "show_effect_name";
 
 const bigtime_t kFrameInterval = 16667;
 const int32 kTextRows = 7;
@@ -48,6 +49,7 @@ TTFXTextScreenSaver::TTFXTextScreenSaver(BMessage* message, image_id image)
 	fEffectInterval(12),
 	fTransitionDuration(3),
 	fRandomiseEffects(true),
+	fShowEffectName(false),
 	fPreview(false)
 {
 	if (message != nullptr) {
@@ -57,6 +59,7 @@ TTFXTextScreenSaver::TTFXTextScreenSaver(BMessage* message, image_id image)
 		message->FindInt32(kEffectIntervalKey, &fEffectInterval);
 		message->FindInt32(kTransitionDurationKey, &fTransitionDuration);
 		message->FindBool(kRandomiseEffectsKey, &fRandomiseEffects);
+		message->FindBool(kShowEffectNameKey, &fShowEffectName);
 	}
 	_ApplySettings();
 }
@@ -83,6 +86,8 @@ TTFXTextScreenSaver::SaveState(BMessage* into) const
 		status = into->AddInt32(kTransitionDurationKey, fTransitionDuration);
 	if (status == B_OK)
 		status = into->AddBool(kRandomiseEffectsKey, fRandomiseEffects);
+	if (status == B_OK)
+		status = into->AddBool(kShowEffectNameKey, fShowEffectName);
 	return status;
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
@@ -95,7 +100,8 @@ TTFXTextScreenSaver::StartConfig(BView* view)
 		return;
 
 	view->AddChild(new TTFXTextConfigView(view->Bounds(), &fText,
-		&fEffectInterval, &fTransitionDuration, &fRandomiseEffects));
+		&fEffectInterval, &fTransitionDuration, &fRandomiseEffects,
+		&fShowEffectName));
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -290,17 +296,19 @@ TTFXTextScreenSaver::_DrawText(BView* view, const BRect& bounds,
 			static_cast<float>(state.y)));
 	}
 
-	BFont labelFont(be_plain_font);
-	labelFont.SetSize(std::max(9.0f, fontSize * 0.095f));
-	view->SetFont(&labelFont);
-	const char* effectName = ttfx::EffectEngine::EffectName(
-		fEffectEngine.CurrentEffect());
-	const float labelWidth = labelFont.StringWidth(effectName);
-	view->SetHighColor(166, 180, 205,
-		static_cast<uint8>(std::lround(std::min(1.0, progress * 2.0) * 210.0)));
-	view->DrawString(effectName, BPoint(bounds.left
-		+ (bounds.Width() - labelWidth) / 2.0f,
-		artTop + artHeight + fontSize * 0.35f));
+	if (fShowEffectName) {
+		BFont labelFont(be_plain_font);
+		labelFont.SetSize(std::max(9.0f, fontSize * 0.095f));
+		view->SetFont(&labelFont);
+		const char* effectName = ttfx::EffectEngine::EffectName(
+			fEffectEngine.CurrentEffect());
+		const float labelWidth = labelFont.StringWidth(effectName);
+		view->SetHighColor(166, 180, 205,
+			static_cast<uint8>(std::lround(std::min(1.0, progress * 2.0) * 210.0)));
+		view->DrawString(effectName, BPoint(bounds.left
+			+ (bounds.Width() - labelWidth) / 2.0f,
+			artTop + artHeight + fontSize * 0.35f));
+	}
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
