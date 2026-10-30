@@ -6,6 +6,10 @@ Substrate/dist/
 Substrate/src/Substrate
 Substrate/src/objects.*
 Substrate/tests/substrate-test
+BrainWash/dist/
+BrainWash/src/BrainWash
+BrainWash/src/objects.*
+BrainWash/tests/brainwash-engine-test
 ttfx-time/dist/
 ttfx-time/src/ttfx-time
 ttfx-time/src/objects.*

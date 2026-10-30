@@ -1,0 +1,15 @@
+resource app_signature "application/x-vnd.BrainWashScreenSaver";
+
+resource app_version {
+	major = 1,
+	middle = 4,
+	minor = 0,
+
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+
+	short_info = "BrainWash screen saver",
+	long_info = "BrainWash 1.4.0 by Stephan Aßmus and Ingo Weinhold"
+};
+
+resource app_flags B_SINGLE_LAUNCH;

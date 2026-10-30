@@ -1,0 +1,24 @@
+name brainwash_screensaver
+version @VERSION@-@REVISION@
+architecture @ARCHITECTURE@
+
+summary "Generative colour-field screen saver"
+description "BrainWash is a native Haiku screen saver that layers randomly transformed mathematical fields while cycling two luminous colour palettes."
+vendor "BrainWash contributors"
+packager "BrainWash contributors"
+
+copyrights {
+	"1998-1999 Stephan Aßmus and Ingo Weinhold"
+}
+
+licenses {
+	"Copyrighted"
+}
+
+provides {
+	brainwash_screensaver = @VERSION@
+}
+
+requires {
+	haiku
+}
