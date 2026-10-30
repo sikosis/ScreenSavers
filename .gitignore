@@ -2,6 +2,10 @@ update-git.sh
 Space/dist/
 Space/src/Space
 Space/src/objects.*
+Substrate/dist/
+Substrate/src/Substrate
+Substrate/src/objects.*
+Substrate/tests/substrate-test
 ttfx-time/dist/
 ttfx-time/src/ttfx-time
 ttfx-time/src/objects.*
