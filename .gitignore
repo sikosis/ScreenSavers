@@ -1,4 +1,8 @@
 update-git.sh
+BeWake/dist/
+BeWake/src/BeWake
+BeWake/src/objects.*
+BeWake/tests/bewake-engine-test
 Space/dist/
 Space/src/Space
 Space/src/objects.*

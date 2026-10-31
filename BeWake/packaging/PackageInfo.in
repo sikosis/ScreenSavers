@@ -1,0 +1,25 @@
+name bewake_screensaver
+version @VERSION@-@REVISION@
+architecture @ARCHITECTURE@
+
+summary "Colourful moving-line wake screen saver"
+description "BeWake is a native Haiku screen saver that draws a fading wake between two independently bouncing points with cycling, random or fixed colours."
+vendor "BeWake contributors"
+packager "BeWake contributors"
+
+copyrights {
+	"2003 Mattia Tristo"
+	"2009 Mattia Tristo and Gabriele Biffi"
+}
+
+licenses {
+	"GNU GPL v2"
+}
+
+provides {
+	bewake_screensaver = @VERSION@
+}
+
+requires {
+	haiku
+}
