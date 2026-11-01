@@ -22,9 +22,40 @@ page.
 Release versions in the table are taken from the published HPKG filenames. A
 release title or tag may use a shortened version label.
 
-## Space preview
+## Screen saver previews
 
-![Space screen saver flying through a star field](Space/Space.png)
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="BeWake/"><img src="BeWake/BeWake.png" alt="BeWake screen saver preview"></a><br>
+      <strong>BeWake</strong>
+    </td>
+    <td width="50%" align="center">
+      <a href="BrainWash/"><img src="BrainWash/BrainWash.png" alt="BrainWash screen saver preview"></a><br>
+      <strong>BrainWash</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="Space/"><img src="Space/Space.png" alt="Space screen saver preview"></a><br>
+      <strong>Space</strong>
+    </td>
+    <td width="50%" align="center">
+      <a href="Substrate/"><img src="Substrate/Substrate.png" alt="Substrate screen saver preview"></a><br>
+      <strong>Substrate</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="ttfx-text/"><img src="ttfx-text/ttfx-text.png" alt="ttfx-text screen saver preview"></a><br>
+      <strong>ttfx-text</strong>
+    </td>
+    <td width="50%" align="center">
+      <a href="ttfx-time/"><img src="ttfx-time/ttfx-time.png" alt="ttfx-time screen saver preview"></a><br>
+      <strong>ttfx-time</strong>
+    </td>
+  </tr>
+</table>
 
 ## Installing a release
 
