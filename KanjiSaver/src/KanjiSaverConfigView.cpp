@@ -13,7 +13,9 @@
 #include <ListView.h>
 #include <Message.h>
 #include <ScrollView.h>
+#include <Size.h>
 #include <Slider.h>
+#include <String.h>
 #include <StringView.h>
 
 
@@ -34,9 +36,10 @@ KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
 	BView(frame, "KanjiSaver settings", B_FOLLOW_ALL, B_WILL_DRAW),
 	fSaver(saver),
 	fFontList(new BListView("CJK fonts", B_SINGLE_SELECTION_LIST)),
-	fTtfxCheckBox(new BCheckBox("ttfx effects", "Animate with ttfx effects",
+	fTtfxCheckBox(new BCheckBox("ttfx effects",
+		"Assemble kanji with ttfx effects",
 		new BMessage(kTtfxChanged))),
-	fIntervalSlider(new BSlider("interval", "Change character every",
+	fIntervalSlider(new BSlider("interval", "Character interval",
 		new BMessage(kIntervalChanged), 1, 15, B_HORIZONTAL, B_BLOCK_THUMB))
 {
 	SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
@@ -62,21 +65,21 @@ KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
 	}
 	fFontList->SetSelectionMessage(new BMessage(kFontSelected));
 	fIntervalSlider->SetLimitLabels("1 second", "15 seconds");
-	fIntervalSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
-	fIntervalSlider->SetHashMarkCount(15);
+	fIntervalSlider->SetExplicitMinSize(BSize(160.0f, 52.0f));
+	_UpdateIntervalLabel();
 
 	BScrollView* scrollView = new BScrollView("font scroll", fFontList,
 		B_FOLLOW_ALL, 0, false, true);
+	scrollView->SetExplicitMinSize(BSize(160.0f, 64.0f));
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_INSETS)
 		.Add(title)
 		.Add(description)
 		.AddStrut(B_USE_DEFAULT_SPACING)
-		.Add(fontLabel)
-		.Add(scrollView, 1.0f)
 		.Add(fTtfxCheckBox)
 		.Add(fIntervalSlider)
-		.AddGlue();
+		.Add(fontLabel)
+		.Add(scrollView, 1.0f);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -120,10 +123,22 @@ KanjiSaverConfigView::MessageReceived(BMessage* message)
 			break;
 		case kIntervalChanged:
 			fSaver->SetIntervalSeconds(fIntervalSlider->Value());
+			_UpdateIntervalLabel();
 			break;
 		default:
 			BView::MessageReceived(message);
 			break;
 	}
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+void
+KanjiSaverConfigView::_UpdateIntervalLabel()
+{
+	const int32 seconds = fIntervalSlider->Value();
+	BString label("Change character every: ");
+	label << seconds << (seconds == 1 ? " second" : " seconds");
+	fIntervalSlider->SetLabel(label.String());
 }
 //---------------------------------------------------------------------------------------------------------------------------------//

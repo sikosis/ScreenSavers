@@ -19,6 +19,8 @@ public:
 	void MessageReceived(BMessage* message) override;
 
 private:
+	void _UpdateIntervalLabel();
+
 	KanjiSaverScreenSaver* fSaver;
 	BListView* fFontList;
 	BCheckBox* fTtfxCheckBox;

@@ -8,17 +8,23 @@
 #include <ScreenSaver.h>
 #include <String.h>
 
+#include <atomic>
 #include <vector>
+
+
+class BBitmap;
 
 
 class KanjiSaverScreenSaver : public BScreenSaver {
 public:
 	KanjiSaverScreenSaver(BMessage* archive, image_id image);
+	~KanjiSaverScreenSaver() override;
 
 	status_t InitCheck() override;
 	status_t SaveState(BMessage* into) const override;
 	void StartConfig(BView* view) override;
 	status_t StartSaver(BView* view, bool preview) override;
+	void StopSaver() override;
 	void Draw(BView* view, int32 frame) override;
 
 	int32 CountFonts() const;
@@ -42,6 +48,7 @@ private:
 	std::string _ChooseSupportedGlyph(const BFont& font,
 		kanjisaver::Colour& colour);
 	void _BeginGlyph(const BFont& font, bigtime_t now);
+	bool _EnsureBuffer(const BRect& bounds);
 	void _UpdateTickSize();
 
 	kanjisaver::Engine fEngine;
@@ -52,10 +59,18 @@ private:
 	kanjisaver::Colour fColour;
 	bigtime_t fGlyphStarted;
 	bigtime_t fNextGlyphAt;
-	int32 fFontIndex;
-	int32 fIntervalSeconds;
-	bool fUseTtfxEffects;
+	bigtime_t fAppliedTickSize;
+	std::atomic<int32> fFontIndex;
+	std::atomic<int32> fIntervalSeconds;
+	std::atomic<bool> fUseTtfxEffects;
+	std::atomic<bool> fRefreshGlyph;
+	std::atomic<bool> fRestartEffect;
+	std::atomic<bool> fIntervalChanged;
 	bool fHasGlyph;
+	BBitmap* fOffscreenBitmap;
+	BView* fOffscreenView;
+	BBitmap* fGlyphBitmap;
+	BView* fGlyphView;
 };
 
 

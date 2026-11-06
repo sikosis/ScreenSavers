@@ -7,6 +7,7 @@
 
 #include "KanjiSaverConfigView.h"
 
+#include <Bitmap.h>
 #include <InterfaceDefs.h>
 #include <Message.h>
 #include <OS.h>
@@ -14,7 +15,6 @@
 #include <View.h>
 
 #include <algorithm>
-#include <cmath>
 #include <cstring>
 #include <new>
 
@@ -27,7 +27,31 @@ const char* const kIntervalKey = "interval_seconds";
 const char* const kUseTtfxEffectsKey = "use_ttfx_effects";
 const int32 kDefaultIntervalSeconds = 5;
 const int32 kGlyphAttempts = 128;
+const int32 kBlockColumns = 8;
+const int32 kBlockRows = 8;
 const bigtime_t kTtfxFrameInterval = 33333;
+
+
+ttfx::Effect
+next_assembly_effect(ttfx::Effect current)
+{
+	static const ttfx::Effect effects[] = {
+		ttfx::Effect::kExpand,
+		ttfx::Effect::kSlide,
+		ttfx::Effect::kRain,
+		ttfx::Effect::kScattered,
+		ttfx::Effect::kWaves,
+		ttfx::Effect::kMatrix
+	};
+	constexpr std::size_t count = sizeof(effects) / sizeof(effects[0]);
+	for (std::size_t index = 0; index < count; index++) {
+		if (effects[index] == current)
+			return effects[(index + 1) % count];
+	}
+	return effects[0];
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
 
 }
 
@@ -48,10 +72,18 @@ KanjiSaverScreenSaver::KanjiSaverScreenSaver(BMessage* archive, image_id image)
 	fColour({255, 255, 255, 255}),
 	fGlyphStarted(0),
 	fNextGlyphAt(0),
+	fAppliedTickSize(0),
 	fFontIndex(0),
 	fIntervalSeconds(kDefaultIntervalSeconds),
 	fUseTtfxEffects(false),
-	fHasGlyph(false)
+	fRefreshGlyph(false),
+	fRestartEffect(false),
+	fIntervalChanged(false),
+	fHasGlyph(false),
+	fOffscreenBitmap(nullptr),
+	fOffscreenView(nullptr),
+	fGlyphBitmap(nullptr),
+	fGlyphView(nullptr)
 {
 	const char* savedFamily = "";
 	const char* savedStyle = "";
@@ -66,11 +98,24 @@ KanjiSaverScreenSaver::KanjiSaverScreenSaver(BMessage* archive, image_id image)
 			&& archivedStyle != nullptr) {
 			savedStyle = archivedStyle;
 		}
-		archive->FindInt32(kIntervalKey, &fIntervalSeconds);
-		archive->FindBool(kUseTtfxEffectsKey, &fUseTtfxEffects);
+		int32 archivedInterval = kDefaultIntervalSeconds;
+		bool archivedEffects = false;
+		if (archive->FindInt32(kIntervalKey, &archivedInterval) == B_OK)
+			fIntervalSeconds.store(archivedInterval);
+		if (archive->FindBool(kUseTtfxEffectsKey, &archivedEffects) == B_OK)
+			fUseTtfxEffects.store(archivedEffects);
 	}
-	fIntervalSeconds = kanjisaver::ClampIntervalSeconds(fIntervalSeconds);
+	fIntervalSeconds.store(kanjisaver::ClampIntervalSeconds(
+		fIntervalSeconds.load()));
 	_LoadFonts(savedFamily, savedStyle);
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+KanjiSaverScreenSaver::~KanjiSaverScreenSaver()
+{
+	delete fOffscreenBitmap;
+	delete fGlyphBitmap;
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -96,10 +141,23 @@ KanjiSaverScreenSaver::SaveState(BMessage* into) const
 	if (status == B_OK)
 		status = into->AddString(kStyleKey, font->style.String());
 	if (status == B_OK)
-		status = into->AddInt32(kIntervalKey, fIntervalSeconds);
+		status = into->AddInt32(kIntervalKey, fIntervalSeconds.load());
 	if (status == B_OK)
-		status = into->AddBool(kUseTtfxEffectsKey, fUseTtfxEffects);
+		status = into->AddBool(kUseTtfxEffectsKey, fUseTtfxEffects.load());
 	return status;
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+void
+KanjiSaverScreenSaver::StopSaver()
+{
+	delete fOffscreenBitmap;
+	fOffscreenBitmap = nullptr;
+	fOffscreenView = nullptr;
+	delete fGlyphBitmap;
+	fGlyphBitmap = nullptr;
+	fGlyphView = nullptr;
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -128,6 +186,10 @@ KanjiSaverScreenSaver::StartSaver(BView* view, bool)
 	fGlyph.clear();
 	fGlyphStarted = 0;
 	fNextGlyphAt = 0;
+	fAppliedTickSize = 0;
+	fRefreshGlyph.store(false);
+	fRestartEffect.store(false);
+	fIntervalChanged.store(false);
 	fHasGlyph = false;
 	fEffectEngine.SetEffect(ttfx::Effect::kExpand, fEffectRandom());
 	_UpdateTickSize();
@@ -141,25 +203,47 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 {
 	if (view == nullptr)
 		return;
+	_UpdateTickSize();
+	const bigtime_t now = system_time();
+	if (fRestartEffect.exchange(false))
+		fGlyphStarted = now;
+	if (fIntervalChanged.exchange(false)) {
+		fNextGlyphAt = now
+			+ static_cast<bigtime_t>(fIntervalSeconds.load()) * 1000000;
+	}
 
-	const BRect bounds = view->Bounds();
-	view->SetDrawingMode(B_OP_COPY);
-	view->SetLowColor(0, 0, 0, 255);
-	view->FillRect(bounds, B_SOLID_LOW);
+	const BRect targetBounds = view->Bounds();
+	if (!_EnsureBuffer(targetBounds) || !fOffscreenBitmap->Lock())
+		return;
+	const BRect bounds = fOffscreenBitmap->Bounds();
+	BView* canvas = fOffscreenView;
+	canvas->ConstrainClippingRegion(nullptr);
+	canvas->SetDrawingMode(B_OP_COPY);
+	canvas->SetLowColor(0, 0, 0, 255);
+	canvas->FillRect(bounds, B_SOLID_LOW);
 
 	const FontInfo* fontInfo = _SelectedFontInfo();
-	if (fontInfo == nullptr)
+	if (fontInfo == nullptr) {
+		canvas->Sync();
+		fOffscreenBitmap->Unlock();
+		view->SetDrawingMode(B_OP_COPY);
+		view->DrawBitmap(fOffscreenBitmap, bounds, targetBounds);
 		return;
+	}
 
 	BFont font;
 	font.SetFamilyAndStyle(fontInfo->identifier);
 	font.SetSize(std::max(8.0f, bounds.Height() * 0.9f));
 
-	const bigtime_t now = system_time();
-	if (!fHasGlyph || now >= fNextGlyphAt)
+	if (fRefreshGlyph.exchange(false) || !fHasGlyph || now >= fNextGlyphAt)
 		_BeginGlyph(font, now);
-	if (fGlyph.empty())
+	if (fGlyph.empty()) {
+		canvas->Sync();
+		fOffscreenBitmap->Unlock();
+		view->SetDrawingMode(B_OP_COPY);
+		view->DrawBitmap(fOffscreenBitmap, bounds, targetBounds);
 		return;
+	}
 
 	font_height metrics;
 	font.GetHeight(&metrics);
@@ -181,11 +265,9 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 	BPoint origin(centreX - glyphWidth / 2.0f,
 		centreY + (metrics.ascent - metrics.descent) / 2.0f);
 
-	kanjisaver::Colour colour = fColour;
-	double opacity = 1.0;
-	if (fUseTtfxEffects) {
+	if (fUseTtfxEffects.load()) {
 		const bigtime_t maximumDuration = static_cast<bigtime_t>(
-			fIntervalSeconds) * 700000;
+			fIntervalSeconds.load()) * 700000;
 		const bigtime_t effectDuration = std::min<bigtime_t>(1500000,
 			maximumDuration);
 		const double progress = effectDuration > 0
@@ -194,24 +276,63 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 			: 1.0;
 		const double animationTime
 			= static_cast<double>(now - fGlyphStarted) / 1000000.0;
-		const ttfx::GlyphState state = fEffectEngine.Transform(0, 1, progress,
-			animationTime, origin.x, origin.y, bounds.Width(), bounds.Height());
-		font.SetSize(font.Size() * static_cast<float>(state.scale));
-		origin.x = static_cast<float>(state.x);
-		origin.y = static_cast<float>(state.y);
-		colour = {state.colour.red, state.colour.green, state.colour.blue, 255};
-		opacity = state.opacity;
-		view->SetDrawingMode(B_OP_ALPHA);
-		view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_OVERLAY);
+		const BRect glyphBounds(origin.x, origin.y - metrics.ascent,
+			origin.x + glyphWidth, origin.y + metrics.descent);
+		const float blockWidth = glyphBounds.Width() / kBlockColumns;
+		const float blockHeight = glyphBounds.Height() / kBlockRows;
+		const std::size_t blockCount = kBlockColumns * kBlockRows;
+		if (!fGlyphBitmap->Lock()) {
+			canvas->Sync();
+			fOffscreenBitmap->Unlock();
+			return;
+		}
+		fGlyphView->ConstrainClippingRegion(nullptr);
+		fGlyphView->SetDrawingMode(B_OP_COPY);
+		fGlyphView->SetHighColor(B_TRANSPARENT_COLOR);
+		fGlyphView->FillRect(bounds, B_SOLID_HIGH);
+		fGlyphView->SetFont(&font, B_FONT_FAMILY_AND_STYLE | B_FONT_SIZE);
+		fGlyphView->SetHighColor(fColour.red, fColour.green, fColour.blue,
+			fColour.alpha);
+		fGlyphView->DrawString(fGlyph.c_str(), origin);
+		fGlyphView->Sync();
+		fGlyphBitmap->Unlock();
+
+		canvas->SetDrawingMode(B_OP_ALPHA);
+		canvas->SetBlendingMode(B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
+
+		std::size_t blockIndex = 0;
+		for (int32 row = 0; row < kBlockRows; row++) {
+			for (int32 column = 0; column < kBlockColumns;
+				column++, blockIndex++) {
+				const float left = glyphBounds.left + column * blockWidth;
+				const float top = glyphBounds.top + row * blockHeight;
+				const float right = column == kBlockColumns - 1
+					? glyphBounds.right : left + blockWidth;
+				const float bottom = row == kBlockRows - 1
+					? glyphBounds.bottom : top + blockHeight;
+				const BRect finalBlock(left, top, right, bottom);
+				const ttfx::GlyphState state = fEffectEngine.Transform(blockIndex,
+					blockCount, progress, animationTime, finalBlock.left,
+					finalBlock.top, bounds.Width(), bounds.Height());
+				const float offsetX = static_cast<float>(state.x) - finalBlock.left;
+				const float offsetY = static_cast<float>(state.y) - finalBlock.top;
+				BRect animatedBlock(finalBlock);
+				animatedBlock.OffsetBy(offsetX, offsetY);
+				canvas->DrawBitmap(fGlyphBitmap, finalBlock, animatedBlock);
+			}
+		}
 	} else {
-		view->SetDrawingMode(B_OP_COPY);
+		canvas->SetDrawingMode(B_OP_COPY);
+		canvas->SetFont(&font, B_FONT_FAMILY_AND_STYLE | B_FONT_SIZE);
+		canvas->SetHighColor(fColour.red, fColour.green, fColour.blue,
+			fColour.alpha);
+		canvas->DrawString(fGlyph.c_str(), origin);
 	}
 
-	view->SetFont(&font, B_FONT_FAMILY_AND_STYLE | B_FONT_SIZE);
-	view->SetHighColor(colour.red, colour.green, colour.blue,
-		static_cast<uint8>(std::lround(std::clamp(opacity, 0.0, 1.0) * 255.0)));
-	view->DrawString(fGlyph.c_str(), origin);
-	view->Sync();
+	canvas->Sync();
+	fOffscreenBitmap->Unlock();
+	view->SetDrawingMode(B_OP_COPY);
+	view->DrawBitmap(fOffscreenBitmap, bounds, targetBounds);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -239,7 +360,7 @@ KanjiSaverScreenSaver::FontLabelAt(int32 index) const
 int32
 KanjiSaverScreenSaver::SelectedFont() const
 {
-	return fFontIndex;
+	return fFontIndex.load();
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -248,8 +369,8 @@ void
 KanjiSaverScreenSaver::SelectFont(int32 index)
 {
 	if (index >= 0 && index < CountFonts()) {
-		fFontIndex = index;
-		fHasGlyph = false;
+		fFontIndex.store(index);
+		fRefreshGlyph.store(true);
 	}
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
@@ -258,7 +379,7 @@ KanjiSaverScreenSaver::SelectFont(int32 index)
 int32
 KanjiSaverScreenSaver::IntervalSeconds() const
 {
-	return fIntervalSeconds;
+	return fIntervalSeconds.load();
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -266,10 +387,8 @@ KanjiSaverScreenSaver::IntervalSeconds() const
 void
 KanjiSaverScreenSaver::SetIntervalSeconds(int32 seconds)
 {
-	fIntervalSeconds = kanjisaver::ClampIntervalSeconds(seconds);
-	fNextGlyphAt = system_time()
-		+ static_cast<bigtime_t>(fIntervalSeconds) * 1000000;
-	_UpdateTickSize();
+	fIntervalSeconds.store(kanjisaver::ClampIntervalSeconds(seconds));
+	fIntervalChanged.store(true);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -277,7 +396,7 @@ KanjiSaverScreenSaver::SetIntervalSeconds(int32 seconds)
 bool
 KanjiSaverScreenSaver::UseTtfxEffects() const
 {
-	return fUseTtfxEffects;
+	return fUseTtfxEffects.load();
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -285,9 +404,8 @@ KanjiSaverScreenSaver::UseTtfxEffects() const
 void
 KanjiSaverScreenSaver::SetUseTtfxEffects(bool enabled)
 {
-	fUseTtfxEffects = enabled;
-	fGlyphStarted = system_time();
-	_UpdateTickSize();
+	fUseTtfxEffects.store(enabled);
+	fRestartEffect.store(true);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -320,7 +438,7 @@ KanjiSaverScreenSaver::_LoadFonts(const char* savedFamily,
 			fFonts.push_back({family, style, font.FamilyAndStyle()});
 			if (std::strcmp(family, savedFamily) == 0
 				&& std::strcmp(style, savedStyle) == 0) {
-				fFontIndex = CountFonts() - 1;
+				fFontIndex.store(CountFonts() - 1);
 			}
 		}
 	}
@@ -331,9 +449,10 @@ KanjiSaverScreenSaver::_LoadFonts(const char* savedFamily,
 const KanjiSaverScreenSaver::FontInfo*
 KanjiSaverScreenSaver::_SelectedFontInfo() const
 {
-	if (fFontIndex < 0 || fFontIndex >= CountFonts())
+	const int32 fontIndex = fFontIndex.load();
+	if (fontIndex < 0 || fontIndex >= CountFonts())
 		return nullptr;
-	return &fFonts[fFontIndex];
+	return &fFonts[fontIndex];
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -367,12 +486,97 @@ KanjiSaverScreenSaver::_BeginGlyph(const BFont& font, bigtime_t now)
 	fGlyph = _ChooseSupportedGlyph(font, fColour);
 	fHasGlyph = !fGlyph.empty();
 	fGlyphStarted = now;
-	fNextGlyphAt = now + static_cast<bigtime_t>(fIntervalSeconds) * 1000000;
+	fNextGlyphAt = now
+		+ static_cast<bigtime_t>(fIntervalSeconds.load()) * 1000000;
 	if (hadGlyph) {
-		fEffectEngine.SetEffect(
-			ttfx::EffectEngine::NextEffect(fEffectEngine.CurrentEffect()),
+		fEffectEngine.SetEffect(next_assembly_effect(
+			fEffectEngine.CurrentEffect()),
 			fEffectRandom());
 	}
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+bool
+KanjiSaverScreenSaver::_EnsureBuffer(const BRect& bounds)
+{
+	const BRect bitmapBounds(0.0f, 0.0f, bounds.Width(), bounds.Height());
+	if (fOffscreenBitmap != nullptr && fGlyphBitmap != nullptr
+		&& fOffscreenBitmap->Bounds() == bitmapBounds) {
+		return true;
+	}
+
+	delete fOffscreenBitmap;
+	delete fGlyphBitmap;
+	fOffscreenBitmap = new(std::nothrow) BBitmap(bitmapBounds,
+		B_BITMAP_ACCEPTS_VIEWS, B_RGBA32);
+	fOffscreenView = nullptr;
+	fGlyphBitmap = nullptr;
+	fGlyphView = nullptr;
+	if (fOffscreenBitmap == nullptr || fOffscreenBitmap->InitCheck() != B_OK) {
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		return false;
+	}
+	fGlyphBitmap = new(std::nothrow) BBitmap(bitmapBounds,
+		B_BITMAP_ACCEPTS_VIEWS, B_RGBA32);
+	if (fGlyphBitmap == nullptr || fGlyphBitmap->InitCheck() != B_OK) {
+		delete fGlyphBitmap;
+		fGlyphBitmap = nullptr;
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		return false;
+	}
+
+	fOffscreenView = new(std::nothrow) BView(bitmapBounds,
+		"KanjiSaver buffer", B_FOLLOW_NONE, B_WILL_DRAW);
+	if (fOffscreenView == nullptr) {
+		delete fGlyphBitmap;
+		fGlyphBitmap = nullptr;
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		return false;
+	}
+	fGlyphView = new(std::nothrow) BView(bitmapBounds,
+		"KanjiSaver glyph", B_FOLLOW_NONE, B_WILL_DRAW);
+	if (fGlyphView == nullptr) {
+		delete fOffscreenView;
+		fOffscreenView = nullptr;
+		delete fGlyphBitmap;
+		fGlyphBitmap = nullptr;
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		return false;
+	}
+
+	if (!fOffscreenBitmap->Lock()) {
+		delete fOffscreenView;
+		fOffscreenView = nullptr;
+		delete fGlyphView;
+		fGlyphView = nullptr;
+		delete fGlyphBitmap;
+		fGlyphBitmap = nullptr;
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		return false;
+	}
+	fOffscreenBitmap->AddChild(fOffscreenView);
+	fOffscreenView->SetViewColor(B_TRANSPARENT_COLOR);
+	fOffscreenBitmap->Unlock();
+	if (!fGlyphBitmap->Lock()) {
+		delete fGlyphView;
+		fGlyphView = nullptr;
+		delete fGlyphBitmap;
+		fGlyphBitmap = nullptr;
+		delete fOffscreenBitmap;
+		fOffscreenBitmap = nullptr;
+		fOffscreenView = nullptr;
+		return false;
+	}
+	fGlyphBitmap->AddChild(fGlyphView);
+	fGlyphView->SetViewColor(B_TRANSPARENT_COLOR);
+	fGlyphBitmap->Unlock();
+	return true;
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -380,9 +584,12 @@ KanjiSaverScreenSaver::_BeginGlyph(const BFont& font, bigtime_t now)
 void
 KanjiSaverScreenSaver::_UpdateTickSize()
 {
-	const bigtime_t interval = fUseTtfxEffects
+	const bigtime_t interval = fUseTtfxEffects.load()
 		? kTtfxFrameInterval
-		: static_cast<bigtime_t>(fIntervalSeconds) * 1000000;
-	SetTickSize(interval);
+		: static_cast<bigtime_t>(fIntervalSeconds.load()) * 1000000;
+	if (interval != fAppliedTickSize) {
+		SetTickSize(interval);
+		fAppliedTickSize = interval;
+	}
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
