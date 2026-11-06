@@ -48,8 +48,16 @@ KanjiSaverScreenSaver::KanjiSaverScreenSaver(BMessage* archive, image_id image)
 	const char* savedFamily = "";
 	const char* savedStyle = "";
 	if (archive != nullptr) {
-		archive->FindString(kFamilyKey, &savedFamily);
-		archive->FindString(kStyleKey, &savedStyle);
+		const char* archivedFamily = nullptr;
+		const char* archivedStyle = nullptr;
+		if (archive->FindString(kFamilyKey, &archivedFamily) == B_OK
+			&& archivedFamily != nullptr) {
+			savedFamily = archivedFamily;
+		}
+		if (archive->FindString(kStyleKey, &archivedStyle) == B_OK
+			&& archivedStyle != nullptr) {
+			savedStyle = archivedStyle;
+		}
 		archive->FindInt32(kIntervalKey, &fIntervalSeconds);
 	}
 	fIntervalSeconds = kanjisaver::ClampIntervalSeconds(fIntervalSeconds);
@@ -220,6 +228,11 @@ void
 KanjiSaverScreenSaver::_LoadFonts(const char* savedFamily,
 	const char* savedStyle)
 {
+	if (savedFamily == nullptr)
+		savedFamily = "";
+	if (savedStyle == nullptr)
+		savedStyle = "";
+
 	BFont font;
 	const int32 familyCount = count_font_families();
 	for (int32 familyIndex = 0; familyIndex < familyCount; familyIndex++) {
