@@ -14,6 +14,7 @@ page.
 | --- | --- | ---: | --- |
 | [BeWake](BeWake/) | A colourful fading wake stretched between two independently bouncing points. | 1.2.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/BeWake) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/BeWake/bewake_screensaver-1.2.0-1-x86_64.hpkg) |
 | [BrainWash](BrainWash/) | Layered mathematical colour fields with continuously cycling palettes. | 1.4.0-1 | Not yet released |
+| [KanjiSaver](KanjiSaver/) | Large, randomly coloured Japanese kanji with a selectable CJK font and configurable interval. | 1.1.0-1 | Not yet released |
 | [Space](Space/) | A smooth, configurable flight through a three-dimensional star field. | 1.3.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/Space-1.3) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/Space-1.3/space_screensaver-1.3.0-1-x86_64.hpkg) |
 | [Substrate](Substrate/) | Intersecting straight and circular cracks deposit translucent coloured sand into crystalline patterns. | 1.1.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/Substrate-v1.0) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/Substrate-v1.0/substrate_screensaver-1.1.0-1-x86_64.hpkg) |
 | [ttfx-text](ttfx-text/) | Configurable block text animated with nine native visual effects. | 1.0.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/ttfx-text-v1.0) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/ttfx-text-v1.0/ttfx_text_screensaver-1.0.0-1-x86_64.hpkg) |
@@ -37,23 +38,30 @@ release title or tag may use a shortened version label.
   </tr>
   <tr>
     <td width="50%" align="center">
-      <a href="Space/"><img src="Space/Space.png" alt="Space screen saver preview"></a><br>
-      <strong>Space</strong>
+      <a href="KanjiSaver/"><img src="KanjiSaver/KanjiSaver.png" alt="KanjiSaver screen saver preview"></a><br>
+      <strong>KanjiSaver</strong>
     </td>
     <td width="50%" align="center">
-      <a href="Substrate/"><img src="Substrate/Substrate.png" alt="Substrate screen saver preview"></a><br>
-      <strong>Substrate</strong>
+      <a href="Space/"><img src="Space/Space.png" alt="Space screen saver preview"></a><br>
+      <strong>Space</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
+      <a href="Substrate/"><img src="Substrate/Substrate.png" alt="Substrate screen saver preview"></a><br>
+      <strong>Substrate</strong>
+    </td>
+    <td width="50%" align="center">
       <a href="ttfx-text/"><img src="ttfx-text/ttfx-text.png" alt="ttfx-text screen saver preview"></a><br>
       <strong>ttfx-text</strong>
     </td>
+  </tr>
+  <tr>
     <td width="50%" align="center">
       <a href="ttfx-time/"><img src="ttfx-time/ttfx-time.png" alt="ttfx-time screen saver preview"></a><br>
       <strong>ttfx-time</strong>
     </td>
+    <td width="50%"></td>
   </tr>
 </table>
 
@@ -99,12 +107,14 @@ attribution details.
 
 ## Repository layout
 
-- `BeWake`, `BrainWash`, `Space`, `Substrate`, `ttfx-text` and `ttfx-time`
-  contain the maintained screen savers.
+- `BeWake`, `BrainWash`, `KanjiSaver`, `Space`, `Substrate`, `ttfx-text` and
+  `ttfx-time` contain the maintained screen savers.
 - `BeWake-Original` preserves the original BeWake source for reference and is
   not a separate release.
 - `BrainWash/BrainWash-Old` preserves the original BrainWash source for
   reference and is not a separate release.
+- `KanjiSaver-Original` preserves the original KanjiSaver source for reference
+  and is not a separate release.
 - `Space-Original` preserves the original Space source for reference and is not
   a separate release.
 
