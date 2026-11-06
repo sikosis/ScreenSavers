@@ -31,7 +31,7 @@ KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
 	:
 	BView(frame, "KanjiSaver settings", B_FOLLOW_ALL, B_WILL_DRAW),
 	fSaver(saver),
-	fFontList(new BListView("CJK fonts", B_SINGLE_SELECTION)),
+	fFontList(new BListView("CJK fonts", B_SINGLE_SELECTION_LIST)),
 	fIntervalSlider(new BSlider("interval", "Change character every",
 		new BMessage(kIntervalChanged), 1, 15, B_HORIZONTAL, B_BLOCK_THUMB))
 {
