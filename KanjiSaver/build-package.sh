@@ -2,7 +2,7 @@
 
 set -eu
 
-version="1.1.0"
+version="1.2.0"
 revision="1"
 
 project_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -56,6 +56,8 @@ cp "$project_directory/README.md" \
 	"$staging_directory/documentation/packages/kanjisaver_screensaver/README.md"
 cp "$project_directory/LICENSE" \
 	"$staging_directory/documentation/packages/kanjisaver_screensaver/LICENSE"
+cp "$project_directory/THIRD_PARTY.md" \
+	"$staging_directory/documentation/packages/kanjisaver_screensaver/THIRD_PARTY.md"
 
 sed \
 	-e "s/@VERSION@/$version/g" \

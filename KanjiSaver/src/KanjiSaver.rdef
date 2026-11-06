@@ -2,14 +2,14 @@ resource app_signature "application/x-vnd.KanjiSaverScreenSaver";
 
 resource app_version {
 	major = 1,
-	middle = 1,
+	middle = 2,
 	minor = 0,
 
 	variety = B_APPV_DEVELOPMENT,
 	internal = 0,
 
 	short_info = "KanjiSaver screen saver",
-	long_info = "KanjiSaver 1.1.0 by Jens Kilian"
+	long_info = "KanjiSaver 1.2.0 by Jens Kilian"
 };
 
 resource app_flags B_SINGLE_LAUNCH;

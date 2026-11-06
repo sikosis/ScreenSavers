@@ -6,6 +6,7 @@
 
 class BListView;
 class BSlider;
+class BCheckBox;
 class KanjiSaverScreenSaver;
 
 
@@ -20,6 +21,7 @@ public:
 private:
 	KanjiSaverScreenSaver* fSaver;
 	BListView* fFontList;
+	BCheckBox* fTtfxCheckBox;
 	BSlider* fIntervalSlider;
 };
 

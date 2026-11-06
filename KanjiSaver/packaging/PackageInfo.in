@@ -3,12 +3,14 @@ version @VERSION@-@REVISION@
 architecture @ARCHITECTURE@
 
 summary "Random Japanese kanji screen saver"
-description "KanjiSaver is a native Haiku screen saver that displays a large randomly selected Japanese kanji in a new colour at a configurable interval."
+description "KanjiSaver is a native Haiku screen saver that displays a large randomly selected Japanese kanji in a new colour at a configurable interval, with optional animated ttfx transitions."
 vendor "KanjiSaver contributors"
 packager "KanjiSaver contributors"
 
 copyrights {
 	"1999-2000 Jens Kilian"
+	"2026 ttfx-haiku contributors"
+	"2026 ttfx-text contributors"
 }
 
 licenses {

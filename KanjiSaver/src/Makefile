@@ -5,7 +5,7 @@ TARGET_DIR = .
 TYPE = SHARED
 APP_MIME_SIG = application/x-vnd.KanjiSaverScreenSaver
 
-SRCS = KanjiSaver.cpp KanjiSaverConfigView.cpp KanjiSaverEngine.cpp
+SRCS = KanjiSaver.cpp KanjiSaverConfigView.cpp KanjiSaverEngine.cpp TTFXEngine.cpp
 RDEFS = KanjiSaver.rdef
 RSRCS =
 

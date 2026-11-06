@@ -7,6 +7,7 @@
 
 #include "KanjiSaver.h"
 
+#include <CheckBox.h>
 #include <LayoutBuilder.h>
 #include <ListItem.h>
 #include <ListView.h>
@@ -20,6 +21,7 @@ namespace {
 
 enum {
 	kFontSelected = 'ksfs',
+	kTtfxChanged = 'kstf',
 	kIntervalChanged = 'ksic'
 };
 
@@ -32,6 +34,8 @@ KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
 	BView(frame, "KanjiSaver settings", B_FOLLOW_ALL, B_WILL_DRAW),
 	fSaver(saver),
 	fFontList(new BListView("CJK fonts", B_SINGLE_SELECTION_LIST)),
+	fTtfxCheckBox(new BCheckBox("ttfx effects", "Animate with ttfx effects",
+		new BMessage(kTtfxChanged))),
 	fIntervalSlider(new BSlider("interval", "Change character every",
 		new BMessage(kIntervalChanged), 1, 15, B_HORIZONTAL, B_BLOCK_THUMB))
 {
@@ -52,6 +56,8 @@ KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
 			fFontList->Select(fSaver->SelectedFont());
 		else
 			fontLabel->SetText("No installed font provides CJK ideographs");
+		fTtfxCheckBox->SetValue(fSaver->UseTtfxEffects()
+			? B_CONTROL_ON : B_CONTROL_OFF);
 		fIntervalSlider->SetValue(fSaver->IntervalSeconds());
 	}
 	fFontList->SetSelectionMessage(new BMessage(kFontSelected));
@@ -68,6 +74,7 @@ KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
 		.AddStrut(B_USE_DEFAULT_SPACING)
 		.Add(fontLabel)
 		.Add(scrollView, 1.0f)
+		.Add(fTtfxCheckBox)
 		.Add(fIntervalSlider)
 		.AddGlue();
 }
@@ -87,6 +94,7 @@ KanjiSaverConfigView::AttachedToWindow()
 {
 	BView::AttachedToWindow();
 	fFontList->SetTarget(this);
+	fTtfxCheckBox->SetTarget(this);
 	fIntervalSlider->SetTarget(this);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
@@ -105,6 +113,10 @@ KanjiSaverConfigView::MessageReceived(BMessage* message)
 	switch (message->what) {
 		case kFontSelected:
 			fSaver->SelectFont(fFontList->CurrentSelection());
+			break;
+		case kTtfxChanged:
+			fSaver->SetUseTtfxEffects(
+				fTtfxCheckBox->Value() == B_CONTROL_ON);
 			break;
 		case kIntervalChanged:
 			fSaver->SetIntervalSeconds(fIntervalSlider->Value());

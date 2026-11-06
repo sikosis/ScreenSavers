@@ -24,8 +24,10 @@ namespace {
 const char* const kFamilyKey = "family";
 const char* const kStyleKey = "style";
 const char* const kIntervalKey = "interval_seconds";
+const char* const kUseTtfxEffectsKey = "use_ttfx_effects";
 const int32 kDefaultIntervalSeconds = 5;
 const int32 kGlyphAttempts = 128;
+const bigtime_t kTtfxFrameInterval = 33333;
 
 }
 
@@ -42,8 +44,14 @@ KanjiSaverScreenSaver::KanjiSaverScreenSaver(BMessage* archive, image_id image)
 	:
 	BScreenSaver(archive, image),
 	fEngine(static_cast<uint32>(system_time())),
+	fEffectRandom(static_cast<uint32>(system_time())),
+	fColour({255, 255, 255, 255}),
+	fGlyphStarted(0),
+	fNextGlyphAt(0),
 	fFontIndex(0),
-	fIntervalSeconds(kDefaultIntervalSeconds)
+	fIntervalSeconds(kDefaultIntervalSeconds),
+	fUseTtfxEffects(false),
+	fHasGlyph(false)
 {
 	const char* savedFamily = "";
 	const char* savedStyle = "";
@@ -59,6 +67,7 @@ KanjiSaverScreenSaver::KanjiSaverScreenSaver(BMessage* archive, image_id image)
 			savedStyle = archivedStyle;
 		}
 		archive->FindInt32(kIntervalKey, &fIntervalSeconds);
+		archive->FindBool(kUseTtfxEffectsKey, &fUseTtfxEffects);
 	}
 	fIntervalSeconds = kanjisaver::ClampIntervalSeconds(fIntervalSeconds);
 	_LoadFonts(savedFamily, savedStyle);
@@ -88,6 +97,8 @@ KanjiSaverScreenSaver::SaveState(BMessage* into) const
 		status = into->AddString(kStyleKey, font->style.String());
 	if (status == B_OK)
 		status = into->AddInt32(kIntervalKey, fIntervalSeconds);
+	if (status == B_OK)
+		status = into->AddBool(kUseTtfxEffectsKey, fUseTtfxEffects);
 	return status;
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
@@ -114,7 +125,12 @@ KanjiSaverScreenSaver::StartSaver(BView* view, bool)
 
 	view->SetViewColor(B_TRANSPARENT_COLOR);
 	view->SetDrawingMode(B_OP_COPY);
-	SetTickSize(static_cast<bigtime_t>(fIntervalSeconds) * 1000000);
+	fGlyph.clear();
+	fGlyphStarted = 0;
+	fNextGlyphAt = 0;
+	fHasGlyph = false;
+	fEffectEngine.SetEffect(ttfx::Effect::kExpand, fEffectRandom());
+	_UpdateTickSize();
 	return B_OK;
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
@@ -127,6 +143,7 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 		return;
 
 	const BRect bounds = view->Bounds();
+	view->SetDrawingMode(B_OP_COPY);
 	view->SetLowColor(0, 0, 0, 255);
 	view->FillRect(bounds, B_SOLID_LOW);
 
@@ -138,14 +155,15 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 	font.SetFamilyAndStyle(fontInfo->identifier);
 	font.SetSize(std::max(8.0f, bounds.Height() * 0.9f));
 
-	kanjisaver::Colour colour = {};
-	const std::string glyph = _ChooseSupportedGlyph(font, colour);
-	if (glyph.empty())
+	const bigtime_t now = system_time();
+	if (!fHasGlyph || now >= fNextGlyphAt)
+		_BeginGlyph(font, now);
+	if (fGlyph.empty())
 		return;
 
 	font_height metrics;
 	font.GetHeight(&metrics);
-	float glyphWidth = font.StringWidth(glyph.c_str());
+	float glyphWidth = font.StringWidth(fGlyph.c_str());
 	const float maximumWidth = std::max(1.0f, bounds.Width() * 0.9f);
 	const float glyphHeight = metrics.ascent + metrics.descent;
 	const float maximumHeight = std::max(1.0f, bounds.Height() * 0.9f);
@@ -155,16 +173,44 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 	if (scale < 1.0f) {
 		font.SetSize(font.Size() * scale);
 		font.GetHeight(&metrics);
-		glyphWidth = font.StringWidth(glyph.c_str());
+		glyphWidth = font.StringWidth(fGlyph.c_str());
+	}
+
+	const float centreX = (bounds.left + bounds.right) / 2.0f;
+	const float centreY = (bounds.top + bounds.bottom) / 2.0f;
+	BPoint origin(centreX - glyphWidth / 2.0f,
+		centreY + (metrics.ascent - metrics.descent) / 2.0f);
+
+	kanjisaver::Colour colour = fColour;
+	double opacity = 1.0;
+	if (fUseTtfxEffects) {
+		const bigtime_t maximumDuration = static_cast<bigtime_t>(
+			fIntervalSeconds) * 700000;
+		const bigtime_t effectDuration = std::min<bigtime_t>(1500000,
+			maximumDuration);
+		const double progress = effectDuration > 0
+			? std::min(1.0, static_cast<double>(now - fGlyphStarted)
+				/ effectDuration)
+			: 1.0;
+		const double animationTime
+			= static_cast<double>(now - fGlyphStarted) / 1000000.0;
+		const ttfx::GlyphState state = fEffectEngine.Transform(0, 1, progress,
+			animationTime, origin.x, origin.y, bounds.Width(), bounds.Height());
+		font.SetSize(font.Size() * static_cast<float>(state.scale));
+		origin.x = static_cast<float>(state.x);
+		origin.y = static_cast<float>(state.y);
+		colour = {state.colour.red, state.colour.green, state.colour.blue, 255};
+		opacity = state.opacity;
+		view->SetDrawingMode(B_OP_ALPHA);
+		view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_OVERLAY);
+	} else {
+		view->SetDrawingMode(B_OP_COPY);
 	}
 
 	view->SetFont(&font, B_FONT_FAMILY_AND_STYLE | B_FONT_SIZE);
-	view->SetHighColor(colour.red, colour.green, colour.blue, colour.alpha);
-	const float centreX = (bounds.left + bounds.right) / 2.0f;
-	const float centreY = (bounds.top + bounds.bottom) / 2.0f;
-	const BPoint origin(centreX - glyphWidth / 2.0f,
-		centreY + (metrics.ascent - metrics.descent) / 2.0f);
-	view->DrawString(glyph.c_str(), origin);
+	view->SetHighColor(colour.red, colour.green, colour.blue,
+		static_cast<uint8>(std::lround(std::clamp(opacity, 0.0, 1.0) * 255.0)));
+	view->DrawString(fGlyph.c_str(), origin);
 	view->Sync();
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
@@ -201,8 +247,10 @@ KanjiSaverScreenSaver::SelectedFont() const
 void
 KanjiSaverScreenSaver::SelectFont(int32 index)
 {
-	if (index >= 0 && index < CountFonts())
+	if (index >= 0 && index < CountFonts()) {
 		fFontIndex = index;
+		fHasGlyph = false;
+	}
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -219,7 +267,27 @@ void
 KanjiSaverScreenSaver::SetIntervalSeconds(int32 seconds)
 {
 	fIntervalSeconds = kanjisaver::ClampIntervalSeconds(seconds);
-	SetTickSize(static_cast<bigtime_t>(fIntervalSeconds) * 1000000);
+	fNextGlyphAt = system_time()
+		+ static_cast<bigtime_t>(fIntervalSeconds) * 1000000;
+	_UpdateTickSize();
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+bool
+KanjiSaverScreenSaver::UseTtfxEffects() const
+{
+	return fUseTtfxEffects;
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+void
+KanjiSaverScreenSaver::SetUseTtfxEffects(bool enabled)
+{
+	fUseTtfxEffects = enabled;
+	fGlyphStarted = system_time();
+	_UpdateTickSize();
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -288,5 +356,33 @@ KanjiSaverScreenSaver::_ChooseSupportedGlyph(const BFont& font,
 			return glyph;
 	}
 	return fallback;
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+void
+KanjiSaverScreenSaver::_BeginGlyph(const BFont& font, bigtime_t now)
+{
+	const bool hadGlyph = fHasGlyph;
+	fGlyph = _ChooseSupportedGlyph(font, fColour);
+	fHasGlyph = !fGlyph.empty();
+	fGlyphStarted = now;
+	fNextGlyphAt = now + static_cast<bigtime_t>(fIntervalSeconds) * 1000000;
+	if (hadGlyph) {
+		fEffectEngine.SetEffect(
+			ttfx::EffectEngine::NextEffect(fEffectEngine.CurrentEffect()),
+			fEffectRandom());
+	}
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+void
+KanjiSaverScreenSaver::_UpdateTickSize()
+{
+	const bigtime_t interval = fUseTtfxEffects
+		? kTtfxFrameInterval
+		: static_cast<bigtime_t>(fIntervalSeconds) * 1000000;
+	SetTickSize(interval);
 }
 //---------------------------------------------------------------------------------------------------------------------------------//

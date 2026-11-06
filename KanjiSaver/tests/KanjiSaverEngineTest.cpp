@@ -1,4 +1,5 @@
 #include "../src/KanjiSaverEngine.h"
+#include "../src/TTFXEngine.h"
 
 #include <cassert>
 #include <cmath>
@@ -77,6 +78,36 @@ test_frames_are_deterministic_and_in_range()
 //---------------------------------------------------------------------------------------------------------------------------------//
 
 
+void
+test_ttfx_effects_are_deterministic_and_bounded()
+{
+	ttfx::EffectEngine first;
+	ttfx::EffectEngine second;
+	for (std::size_t effectIndex = 0;
+		effectIndex < static_cast<std::size_t>(ttfx::Effect::kCount);
+		effectIndex++) {
+		const ttfx::Effect effect = static_cast<ttfx::Effect>(effectIndex);
+		first.SetEffect(effect, 12345);
+		second.SetEffect(effect, 12345);
+		for (std::size_t glyphIndex = 0; glyphIndex < 16; glyphIndex++) {
+			const ttfx::GlyphState firstState = first.Transform(glyphIndex, 16,
+				0.6, 0.75, 320.0, 240.0, 1280.0, 720.0);
+			const ttfx::GlyphState secondState = second.Transform(glyphIndex, 16,
+				0.6, 0.75, 320.0, 240.0, 1280.0, 720.0);
+			assert(nearly_equal(firstState.x, secondState.x));
+			assert(nearly_equal(firstState.y, secondState.y));
+			assert(nearly_equal(firstState.scale, secondState.scale));
+			assert(nearly_equal(firstState.opacity, secondState.opacity));
+			assert(firstState.opacity >= 0.0 && firstState.opacity <= 1.0);
+			assert(firstState.scale > 0.0);
+			assert(std::isfinite(firstState.x));
+			assert(std::isfinite(firstState.y));
+		}
+	}
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
 }
 
 
@@ -87,6 +118,7 @@ main()
 	test_utf8_encoding();
 	test_interval_clamping();
 	test_frames_are_deterministic_and_in_range();
+	test_ttfx_effects_are_deterministic_and_bounded();
 	std::cout << "KanjiSaver engine tests passed\n";
 	return 0;
 }

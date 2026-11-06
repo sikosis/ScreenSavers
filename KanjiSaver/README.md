@@ -9,6 +9,10 @@ new colour at a configurable interval.
 This maintained port is based on the original 1999–2000 KanjiSaver by Jens
 Kilian. It preserves the original font selection and saved `family` and
 `style` settings while updating the implementation for current Haiku systems.
+The optional effects use the BView-native ttfx adapter shared with this
+repository's ttfx screen savers. The upstream `ttfx-haiku` engine targets ANSI
+terminals, so its visual behaviour is adapted to Haiku drawing primitives
+rather than starting a terminal renderer inside ScreenSaver.
 
 ## Features
 
@@ -16,6 +20,8 @@ Kilian. It preserves the original font selection and saved `family` and
 - Random hue, saturation and lightness for every character
 - Selection from installed fonts that advertise CJK coverage
 - Per-character glyph checks to reduce missing-glyph boxes
+- Optional animated ttfx effects, including expand, slide, rain, decrypt,
+  waves, colour shift and Matrix-style transitions
 - Configurable character interval from 1 to 15 seconds
 - Responsive configuration panel and safe saved-setting validation
 - Deterministic, portable UTF-8, colour and random-selection tests
@@ -56,12 +62,12 @@ Create and verify an installable package on Haiku:
 ```
 
 The script runs the tests, performs a clean native build and creates
-`dist/kanjisaver_screensaver-1.1.0-1-<architecture>.hpkg`.
+`dist/kanjisaver_screensaver-1.2.0-1-<architecture>.hpkg`.
 
 Install it with HaikuDepot or from Terminal:
 
 ```sh
-pkgman install dist/kanjisaver_screensaver-1.1.0-1-$(getarch).hpkg
+pkgman install dist/kanjisaver_screensaver-1.2.0-1-$(getarch).hpkg
 ```
 
 Remove any copy from
@@ -70,6 +76,8 @@ packaged version, otherwise the unpackaged add-on may shadow it.
 
 ## Version and licence
 
-- Version: 1.1.0
+- Version: 1.2.0
 - Original author: Jens Kilian, 1999–2000
 - Licence: GNU General Public License, version 1 or any later version
+- ttfx effect adapter: MIT-licensed code adapted from `ttfx-text` and
+  `ttfx-haiku`; see `THIRD_PARTY.md`

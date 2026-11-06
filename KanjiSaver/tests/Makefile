@@ -3,7 +3,8 @@ CXXFLAGS ?= -O2
 CXXFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -Werror
 
 TARGET = kanjisaver-engine-test
-SOURCES = KanjiSaverEngineTest.cpp ../src/KanjiSaverEngine.cpp
+SOURCES = KanjiSaverEngineTest.cpp ../src/KanjiSaverEngine.cpp \
+	../src/TTFXEngine.cpp
 
 .PHONY: all test clean
 

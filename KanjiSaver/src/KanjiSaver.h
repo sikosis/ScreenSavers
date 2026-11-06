@@ -2,6 +2,7 @@
 #define KANJI_SAVER_H
 
 #include "KanjiSaverEngine.h"
+#include "TTFXEngine.h"
 
 #include <Font.h>
 #include <ScreenSaver.h>
@@ -26,6 +27,8 @@ public:
 	void SelectFont(int32 index);
 	int32 IntervalSeconds() const;
 	void SetIntervalSeconds(int32 seconds);
+	bool UseTtfxEffects() const;
+	void SetUseTtfxEffects(bool enabled);
 
 private:
 	struct FontInfo {
@@ -38,11 +41,21 @@ private:
 	const FontInfo* _SelectedFontInfo() const;
 	std::string _ChooseSupportedGlyph(const BFont& font,
 		kanjisaver::Colour& colour);
+	void _BeginGlyph(const BFont& font, bigtime_t now);
+	void _UpdateTickSize();
 
 	kanjisaver::Engine fEngine;
+	ttfx::EffectEngine fEffectEngine;
+	std::mt19937 fEffectRandom;
 	std::vector<FontInfo> fFonts;
+	std::string fGlyph;
+	kanjisaver::Colour fColour;
+	bigtime_t fGlyphStarted;
+	bigtime_t fNextGlyphAt;
 	int32 fFontIndex;
 	int32 fIntervalSeconds;
+	bool fUseTtfxEffects;
+	bool fHasGlyph;
 };
 
 
