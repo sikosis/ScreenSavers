@@ -15,6 +15,7 @@
 #include <View.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <new>
 
@@ -27,9 +28,39 @@ const char* const kIntervalKey = "interval_seconds";
 const char* const kUseTtfxEffectsKey = "use_ttfx_effects";
 const int32 kDefaultIntervalSeconds = 5;
 const int32 kGlyphAttempts = 128;
-const int32 kBlockColumns = 8;
-const int32 kBlockRows = 8;
+const int32 kBlockColumns = 16;
+const int32 kBlockRows = 16;
 const bigtime_t kTtfxFrameInterval = 33333;
+
+
+bool
+bitmap_block_has_content(BBitmap* bitmap, const BRect& block)
+{
+	if (bitmap == nullptr || bitmap->Bits() == nullptr)
+		return false;
+	const BRect bounds = bitmap->Bounds();
+	const int32 left = std::clamp(static_cast<int32>(std::floor(block.left)),
+		0, static_cast<int32>(bounds.IntegerWidth()));
+	const int32 right = std::clamp(static_cast<int32>(std::ceil(block.right)),
+		0, static_cast<int32>(bounds.IntegerWidth()));
+	const int32 top = std::clamp(static_cast<int32>(std::floor(block.top)),
+		0, static_cast<int32>(bounds.IntegerHeight()));
+	const int32 bottom = std::clamp(static_cast<int32>(std::ceil(block.bottom)),
+		0, static_cast<int32>(bounds.IntegerHeight()));
+	const uint8* bits = static_cast<const uint8*>(bitmap->Bits());
+	const int32 bytesPerRow = bitmap->BytesPerRow();
+	for (int32 y = top; y <= bottom; y++) {
+		for (int32 x = left; x <= right; x++) {
+			const uint8* pixel = bits + y * bytesPerRow + x * 4;
+			if (pixel[0] != 0 || pixel[1] != 0 || pixel[2] != 0
+				|| pixel[3] != 0) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
 
 
 ttfx::Effect
@@ -286,10 +317,10 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 			fOffscreenBitmap->Unlock();
 			return;
 		}
+		std::memset(fGlyphBitmap->Bits(), 0, fGlyphBitmap->BitsLength());
 		fGlyphView->ConstrainClippingRegion(nullptr);
 		fGlyphView->SetDrawingMode(B_OP_COPY);
-		fGlyphView->SetHighColor(B_TRANSPARENT_COLOR);
-		fGlyphView->FillRect(bounds, B_SOLID_HIGH);
+		fGlyphView->SetLowColor(B_TRANSPARENT_COLOR);
 		fGlyphView->SetFont(&font, B_FONT_FAMILY_AND_STYLE | B_FONT_SIZE);
 		fGlyphView->SetHighColor(fColour.red, fColour.green, fColour.blue,
 			fColour.alpha);
@@ -311,6 +342,8 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 				const float bottom = row == kBlockRows - 1
 					? glyphBounds.bottom : top + blockHeight;
 				const BRect finalBlock(left, top, right, bottom);
+				if (!bitmap_block_has_content(fGlyphBitmap, finalBlock))
+					continue;
 				const ttfx::GlyphState state = fEffectEngine.Transform(blockIndex,
 					blockCount, progress, animationTime, finalBlock.left,
 					finalBlock.top, bounds.Width(), bounds.Height());

@@ -20,7 +20,7 @@ rather than starting a terminal renderer inside ScreenSaver.
 - Random hue, saturation and lightness for every character
 - Selection from installed fonts that advertise CJK coverage
 - Per-character glyph checks to reduce missing-glyph boxes
-- Optional 8×8 block assembly using expand, slide, rain, decrypt, waves,
+- Optional 16×16 block assembly using expand, slide, rain, scattered, waves,
   colour shift and Matrix-style ttfx transitions
 - Double-buffered animation to prevent flicker while the blocks move
 - Configurable character interval from 1 to 15 seconds
