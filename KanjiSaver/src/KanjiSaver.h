@@ -45,8 +45,8 @@ private:
 
 	void _LoadFonts(const char* savedFamily, const char* savedStyle);
 	const FontInfo* _SelectedFontInfo() const;
-	std::string _ChooseSupportedGlyph(const BFont& font,
-		kanjisaver::Colour& colour);
+	bool _ChooseSupportedGlyph(const BFont& font, kanjisaver::Colour& colour,
+		kanjisaver::Utf8Glyph& glyph);
 	void _BeginGlyph(const BFont& font, bigtime_t now);
 	bool _EnsureBuffer(const BRect& bounds);
 	void _UpdateTickSize();
@@ -55,7 +55,7 @@ private:
 	ttfx::EffectEngine fEffectEngine;
 	std::mt19937 fEffectRandom;
 	std::vector<FontInfo> fFonts;
-	std::string fGlyph;
+	kanjisaver::Utf8Glyph fGlyph;
 	kanjisaver::Colour fColour;
 	bigtime_t fGlyphStarted;
 	bigtime_t fNextGlyphAt;

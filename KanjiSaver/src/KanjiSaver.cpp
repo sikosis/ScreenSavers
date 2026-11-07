@@ -100,6 +100,7 @@ KanjiSaverScreenSaver::KanjiSaverScreenSaver(BMessage* archive, image_id image)
 	BScreenSaver(archive, image),
 	fEngine(static_cast<uint32>(system_time())),
 	fEffectRandom(static_cast<uint32>(system_time())),
+	fGlyph({}),
 	fColour({255, 255, 255, 255}),
 	fGlyphStarted(0),
 	fNextGlyphAt(0),
@@ -214,7 +215,7 @@ KanjiSaverScreenSaver::StartSaver(BView* view, bool)
 
 	view->SetViewColor(B_TRANSPARENT_COLOR);
 	view->SetDrawingMode(B_OP_COPY);
-	fGlyph.clear();
+	fGlyph.fill('\0');
 	fGlyphStarted = 0;
 	fNextGlyphAt = 0;
 	fAppliedTickSize = 0;
@@ -268,7 +269,7 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 
 	if (fRefreshGlyph.exchange(false) || !fHasGlyph || now >= fNextGlyphAt)
 		_BeginGlyph(font, now);
-	if (fGlyph.empty()) {
+	if (fGlyph[0] == '\0') {
 		canvas->Sync();
 		fOffscreenBitmap->Unlock();
 		view->SetDrawingMode(B_OP_COPY);
@@ -278,7 +279,7 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 
 	font_height metrics;
 	font.GetHeight(&metrics);
-	float glyphWidth = font.StringWidth(fGlyph.c_str());
+	float glyphWidth = font.StringWidth(fGlyph.data());
 	const float maximumWidth = std::max(1.0f, bounds.Width() * 0.9f);
 	const float glyphHeight = metrics.ascent + metrics.descent;
 	const float maximumHeight = std::max(1.0f, bounds.Height() * 0.9f);
@@ -288,7 +289,7 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 	if (scale < 1.0f) {
 		font.SetSize(font.Size() * scale);
 		font.GetHeight(&metrics);
-		glyphWidth = font.StringWidth(fGlyph.c_str());
+		glyphWidth = font.StringWidth(fGlyph.data());
 	}
 
 	const float centreX = (bounds.left + bounds.right) / 2.0f;
@@ -324,7 +325,7 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 		fGlyphView->SetFont(&font, B_FONT_FAMILY_AND_STYLE | B_FONT_SIZE);
 		fGlyphView->SetHighColor(fColour.red, fColour.green, fColour.blue,
 			fColour.alpha);
-		fGlyphView->DrawString(fGlyph.c_str(), origin);
+		fGlyphView->DrawString(fGlyph.data(), origin);
 		fGlyphView->Sync();
 		fGlyphBitmap->Unlock();
 
@@ -359,7 +360,7 @@ KanjiSaverScreenSaver::Draw(BView* view, int32)
 		canvas->SetFont(&font, B_FONT_FAMILY_AND_STYLE | B_FONT_SIZE);
 		canvas->SetHighColor(fColour.red, fColour.green, fColour.blue,
 			fColour.alpha);
-		canvas->DrawString(fGlyph.c_str(), origin);
+		canvas->DrawString(fGlyph.data(), origin);
 	}
 
 	canvas->Sync();
@@ -490,24 +491,29 @@ KanjiSaverScreenSaver::_SelectedFontInfo() const
 //---------------------------------------------------------------------------------------------------------------------------------//
 
 
-std::string
+bool
 KanjiSaverScreenSaver::_ChooseSupportedGlyph(const BFont& font,
-	kanjisaver::Colour& colour)
+	kanjisaver::Colour& colour, kanjisaver::Utf8Glyph& selectedGlyph)
 {
-	std::string fallback;
+	kanjisaver::Utf8Glyph fallback = {};
+	selectedGlyph.fill('\0');
 	for (int32 attempt = 0; attempt < kGlyphAttempts; attempt++) {
 		const kanjisaver::Frame frame = fEngine.NextFrame();
-		const std::string glyph = kanjisaver::Utf8ForCodePoint(frame.codePoint);
-		if (glyph.empty())
+		const kanjisaver::Utf8Glyph glyph
+			= kanjisaver::Utf8GlyphForCodePoint(frame.codePoint);
+		if (glyph[0] == '\0')
 			continue;
 		fallback = glyph;
 		colour = frame.colour;
 		bool hasGlyph = false;
-		font.GetHasGlyphs(glyph.c_str(), 1, &hasGlyph, false);
-		if (hasGlyph)
-			return glyph;
+		font.GetHasGlyphs(glyph.data(), 1, &hasGlyph, false);
+		if (hasGlyph) {
+			selectedGlyph = glyph;
+			return true;
+		}
 	}
-	return fallback;
+	selectedGlyph = fallback;
+	return selectedGlyph[0] != '\0';
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 
@@ -516,8 +522,7 @@ void
 KanjiSaverScreenSaver::_BeginGlyph(const BFont& font, bigtime_t now)
 {
 	const bool hadGlyph = fHasGlyph;
-	fGlyph = _ChooseSupportedGlyph(font, fColour);
-	fHasGlyph = !fGlyph.empty();
+	fHasGlyph = _ChooseSupportedGlyph(font, fColour, fGlyph);
 	fGlyphStarted = now;
 	fNextGlyphAt = now
 		+ static_cast<bigtime_t>(fIntervalSeconds.load()) * 1000000;

@@ -45,6 +45,23 @@ test_utf8_encoding()
 	assert(kanjisaver::Utf8ForCodePoint(0x1f642) == "\xf0\x9f\x99\x82");
 	assert(kanjisaver::Utf8ForCodePoint(0xd800).empty());
 	assert(kanjisaver::Utf8ForCodePoint(0x110000).empty());
+	const kanjisaver::Utf8Glyph kanji
+		= kanjisaver::Utf8GlyphForCodePoint(0x4e00);
+	assert(kanji[0] == static_cast<char>(0xe4));
+	assert(kanji[1] == static_cast<char>(0xb8));
+	assert(kanji[2] == static_cast<char>(0x80));
+	assert(kanji[3] == '\0');
+	assert(kanji[4] == '\0');
+	for (uint32_t codePoint = kanjisaver::kMinimumCodePoint;
+		codePoint <= kanjisaver::kMaximumCodePoint; codePoint++) {
+		const kanjisaver::Utf8Glyph glyph
+			= kanjisaver::Utf8GlyphForCodePoint(codePoint);
+		assert(glyph[0] != '\0');
+		assert(glyph[1] != '\0');
+		assert(glyph[2] != '\0');
+		assert(glyph[3] == '\0');
+		assert(glyph[4] == '\0');
+	}
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
 

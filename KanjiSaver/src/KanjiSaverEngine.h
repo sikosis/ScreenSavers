@@ -1,6 +1,7 @@
 #ifndef KANJI_SAVER_ENGINE_H
 #define KANJI_SAVER_ENGINE_H
 
+#include <array>
 #include <cstdint>
 #include <random>
 #include <string>
@@ -10,6 +11,9 @@ namespace kanjisaver {
 
 constexpr uint32_t kMinimumCodePoint = 0x4e00;
 constexpr uint32_t kMaximumCodePoint = 0x9fff;
+
+
+using Utf8Glyph = std::array<char, 5>;
 
 
 struct Colour {
@@ -30,6 +34,7 @@ struct Frame {
 
 double NormaliseHue(double hue);
 Colour HslToRgb(double hue, double saturation, double lightness);
+Utf8Glyph Utf8GlyphForCodePoint(uint32_t codePoint);
 std::string Utf8ForCodePoint(uint32_t codePoint);
 int32_t ClampIntervalSeconds(int32_t seconds);
 

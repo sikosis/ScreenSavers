@@ -78,34 +78,46 @@ HslToRgb(double hue, double saturation, double lightness)
 //---------------------------------------------------------------------------------------------------------------------------------//
 
 
+Utf8Glyph
+Utf8GlyphForCodePoint(uint32_t codePoint)
+{
+	Utf8Glyph glyph = {};
+	if (codePoint <= 0x7f) {
+		glyph[0] = static_cast<char>(codePoint);
+	} else if (codePoint <= 0x7ff) {
+		glyph[0] = static_cast<char>(0xc0 | (codePoint >> 6));
+		glyph[1] = static_cast<char>(0x80 | (codePoint & 0x3f));
+	} else if (codePoint >= 0xd800 && codePoint <= 0xdfff) {
+		return glyph;
+	} else if (codePoint <= 0xffff) {
+		glyph[0] = static_cast<char>(0xe0 | (codePoint >> 12));
+		glyph[1] = static_cast<char>(0x80 | ((codePoint >> 6) & 0x3f));
+		glyph[2] = static_cast<char>(0x80 | (codePoint & 0x3f));
+	} else if (codePoint <= 0x10ffff) {
+		glyph[0] = static_cast<char>(0xf0 | (codePoint >> 18));
+		glyph[1] = static_cast<char>(0x80 | ((codePoint >> 12) & 0x3f));
+		glyph[2] = static_cast<char>(0x80 | ((codePoint >> 6) & 0x3f));
+		glyph[3] = static_cast<char>(0x80 | (codePoint & 0x3f));
+	}
+	return glyph;
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
 std::string
 Utf8ForCodePoint(uint32_t codePoint)
 {
+	const Utf8Glyph glyph = Utf8GlyphForCodePoint(codePoint);
 	if (codePoint <= 0x7f)
-		return std::string(1, static_cast<char>(codePoint));
-	if (codePoint <= 0x7ff) {
-		std::string text;
-		text += static_cast<char>(0xc0 | (codePoint >> 6));
-		text += static_cast<char>(0x80 | (codePoint & 0x3f));
-		return text;
-	}
+		return std::string(glyph.data(), 1);
+	if (codePoint <= 0x7ff)
+		return std::string(glyph.data(), 2);
 	if (codePoint >= 0xd800 && codePoint <= 0xdfff)
 		return std::string();
-	if (codePoint <= 0xffff) {
-		std::string text;
-		text += static_cast<char>(0xe0 | (codePoint >> 12));
-		text += static_cast<char>(0x80 | ((codePoint >> 6) & 0x3f));
-		text += static_cast<char>(0x80 | (codePoint & 0x3f));
-		return text;
-	}
-	if (codePoint <= 0x10ffff) {
-		std::string text;
-		text += static_cast<char>(0xf0 | (codePoint >> 18));
-		text += static_cast<char>(0x80 | ((codePoint >> 12) & 0x3f));
-		text += static_cast<char>(0x80 | ((codePoint >> 6) & 0x3f));
-		text += static_cast<char>(0x80 | (codePoint & 0x3f));
-		return text;
-	}
+	if (codePoint <= 0xffff)
+		return std::string(glyph.data(), 3);
+	if (codePoint <= 0x10ffff)
+		return std::string(glyph.data(), 4);
 	return std::string();
 }
 //---------------------------------------------------------------------------------------------------------------------------------//
