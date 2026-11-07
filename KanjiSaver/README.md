@@ -25,6 +25,7 @@ rather than starting a terminal renderer inside ScreenSaver.
 - Double-buffered animation to prevent flicker while the blocks move
 - Configurable character interval from 1 to 15 seconds
 - Responsive configuration panel and safe saved-setting validation
+- Fixed-buffer UTF-8 glyph handling for reliable long-running animation
 - Deterministic, portable UTF-8, colour and random-selection tests
 - Haiku R1/beta6-compatible build and HPKG packaging
 
@@ -63,12 +64,12 @@ Create and verify an installable package on Haiku:
 ```
 
 The script runs the tests, performs a clean native build and creates
-`dist/kanjisaver_screensaver-1.2.0-1-<architecture>.hpkg`.
+`dist/kanjisaver_screensaver-1.2.1-1-<architecture>.hpkg`.
 
 Install it with HaikuDepot or from Terminal:
 
 ```sh
-pkgman install dist/kanjisaver_screensaver-1.2.0-1-$(getarch).hpkg
+pkgman install dist/kanjisaver_screensaver-1.2.1-1-$(getarch).hpkg
 ```
 
 Remove any copy from
@@ -77,7 +78,7 @@ packaged version, otherwise the unpackaged add-on may shadow it.
 
 ## Version and licence
 
-- Version: 1.2.0
+- Version: 1.2.1
 - Original author: Jens Kilian, 1999–2000
 - Licence: GNU General Public License, version 1 or any later version
 - ttfx effect adapter: MIT-licensed code adapted from `ttfx-text` and

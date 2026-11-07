@@ -44,7 +44,7 @@ KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
 		new BMessage(kIntervalChanged), 1, 15, B_HORIZONTAL, B_BLOCK_THUMB))
 {
 	SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
-	fTtfxCheckBox->SetHighUIColor(B_CONTROL_TEXT_COLOR);
+	fTtfxCheckBox->SetHighUIColor(B_PANEL_TEXT_COLOR);
 
 	BStringView* title = new BStringView("title", "KanjiSaver");
 	title->SetFont(be_bold_font);

@@ -14,7 +14,7 @@ page.
 | --- | --- | ---: | --- |
 | [BeWake](BeWake/) | A colourful fading wake stretched between two independently bouncing points. | 1.2.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/BeWake) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/BeWake/bewake_screensaver-1.2.0-1-x86_64.hpkg) |
 | [BrainWash](BrainWash/) | Layered mathematical colour fields with continuously cycling palettes. | 1.4.0-1 | Not yet released |
-| [KanjiSaver](KanjiSaver/) | Large, randomly coloured Japanese kanji with selectable CJK fonts and optional ttfx block assembly. | 1.2.0-1 | Not yet released |
+| [KanjiSaver](KanjiSaver/) | Large, randomly coloured Japanese kanji with selectable CJK fonts and optional ttfx block assembly. | 1.2.1-1 | Not yet released |
 | [Space](Space/) | A smooth, configurable flight through a three-dimensional star field. | 1.3.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/Space-1.3) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/Space-1.3/space_screensaver-1.3.0-1-x86_64.hpkg) |
 | [Substrate](Substrate/) | Intersecting straight and circular cracks deposit translucent coloured sand into crystalline patterns. | 1.1.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/Substrate-v1.0) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/Substrate-v1.0/substrate_screensaver-1.1.0-1-x86_64.hpkg) |
 | [ttfx-text](ttfx-text/) | Configurable block text animated with nine native visual effects. | 1.0.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/ttfx-text-v1.0) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/ttfx-text-v1.0/ttfx_text_screensaver-1.0.0-1-x86_64.hpkg) |
