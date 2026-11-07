@@ -28,7 +28,33 @@ enum {
 	kIntervalChanged = 'ksic'
 };
 
+
+class PanelCheckBox : public BCheckBox {
+public:
+	PanelCheckBox(const char* name, const char* label, BMessage* message);
+
+	void AttachedToWindow() override;
+};
+
 }
+
+
+PanelCheckBox::PanelCheckBox(const char* name, const char* label,
+	BMessage* message)
+	:
+	BCheckBox(name, label, message)
+{
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
+
+
+void
+PanelCheckBox::AttachedToWindow()
+{
+	BCheckBox::AttachedToWindow();
+	SetHighUIColor(B_PANEL_TEXT_COLOR);
+}
+//---------------------------------------------------------------------------------------------------------------------------------//
 
 
 KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
@@ -37,14 +63,13 @@ KanjiSaverConfigView::KanjiSaverConfigView(BRect frame,
 	BView(frame, "KanjiSaver settings", B_FOLLOW_ALL, B_WILL_DRAW),
 	fSaver(saver),
 	fFontList(new BListView("CJK fonts", B_SINGLE_SELECTION_LIST)),
-	fTtfxCheckBox(new BCheckBox("ttfx effects",
+	fTtfxCheckBox(new PanelCheckBox("ttfx effects",
 		"Assemble kanji with ttfx effects",
 		new BMessage(kTtfxChanged))),
 	fIntervalSlider(new BSlider("interval", "Character interval",
 		new BMessage(kIntervalChanged), 1, 15, B_HORIZONTAL, B_BLOCK_THUMB))
 {
 	SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
-	fTtfxCheckBox->SetHighUIColor(B_PANEL_TEXT_COLOR);
 
 	BStringView* title = new BStringView("title", "KanjiSaver");
 	title->SetFont(be_bold_font);
