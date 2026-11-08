@@ -59,10 +59,14 @@ BinaryClockConfigView::BinaryClockConfigView(BRect frame, int32* effectInterval,
 	fRandomiseEffects(randomiseEffects)
 {
 	SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
+	SetHighUIColor(B_PANEL_TEXT_COLOR);
 	BStringView* title = new BStringView("title", "BinaryClock");
-	title->SetFont(be_bold_font);
+	title->SetFont(be_plain_font);
+	title->SetHighUIColor(B_PANEL_TEXT_COLOR);
 	BStringView* description = new BStringView("description",
 		"Binary-coded decimal clock with optional ttfx effects");
+	description->SetFont(be_plain_font);
+	description->SetHighUIColor(B_PANEL_TEXT_COLOR);
 
 	fEffectIntervalSlider->SetLimitLabels("5 seconds", "60 seconds");
 	fEffectIntervalSlider->SetHashMarks(B_HASH_MARKS_BOTTOM);
