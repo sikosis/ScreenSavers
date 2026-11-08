@@ -60,8 +60,8 @@ BinaryClockConfigView::BinaryClockConfigView(BRect frame, int32* effectInterval,
 {
 	SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
 	SetHighUIColor(B_PANEL_TEXT_COLOR);
-	BStringView* title = new BStringView("title", "BinaryClock");
-	title->SetFont(be_plain_font);
+	BStringView* title = new BStringView("title", "Binary Clock");
+	title->SetFont(be_bold_font);
 	title->SetHighUIColor(B_PANEL_TEXT_COLOR);
 	BStringView* description = new BStringView("description",
 		"Binary-coded decimal clock with optional ttfx effects");
