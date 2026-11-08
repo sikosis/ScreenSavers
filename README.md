@@ -13,6 +13,7 @@ page.
 | Screen saver | Description | Package version | Release |
 | --- | --- | ---: | --- |
 | [BeWake](BeWake/) | A colourful fading wake stretched between two independently bouncing points. | 1.2.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/BeWake) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/BeWake/bewake_screensaver-1.2.0-1-x86_64.hpkg) |
+| [BinaryClock](BinaryClock/) | A binary-coded decimal clock with optional ttfx effects and LED-style bit columns. | 1.0.0-1 | Not yet released |
 | [BrainWash](BrainWash/) | Layered mathematical colour fields with continuously cycling palettes. | 1.4.0-1 | Not yet released |
 | [KanjiSaver](KanjiSaver/) | Large, randomly coloured Japanese kanji with selectable CJK fonts and optional ttfx block assembly. | 1.2.1-1 | Not yet released |
 | [Space](Space/) | A smooth, configurable flight through a three-dimensional star field. | 1.3.0-1 | [Release](https://github.com/sikosis/ScreenSavers/releases/tag/Space-1.3) · [x86_64 HPKG](https://github.com/sikosis/ScreenSavers/releases/download/Space-1.3/space_screensaver-1.3.0-1-x86_64.hpkg) |
@@ -61,7 +62,10 @@ release title or tag may use a shortened version label.
       <a href="ttfx-time/"><img src="ttfx-time/ttfx-time.png" alt="ttfx-time screen saver preview"></a><br>
       <strong>ttfx-time</strong>
     </td>
-    <td width="50%"></td>
+    <td width="50%" align="center">
+      <a href="BinaryClock/"><img src="BinaryClock/BinaryClock.png" alt="BinaryClock screen saver preview"></a><br>
+      <strong>BinaryClock</strong>
+    </td>
   </tr>
 </table>
 
@@ -107,8 +111,8 @@ attribution details.
 
 ## Repository layout
 
-- `BeWake`, `BrainWash`, `KanjiSaver`, `Space`, `Substrate`, `ttfx-text` and
-  `ttfx-time` contain the maintained screen savers.
+- `BeWake`, `BinaryClock`, `BrainWash`, `KanjiSaver`, `Space`, `Substrate`,
+  `ttfx-text` and `ttfx-time` contain the maintained screen savers.
 - `BeWake-Original` preserves the original BeWake source for reference and is
   not a separate release.
 - `BrainWash/BrainWash-Old` preserves the original BrainWash source for

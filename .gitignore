@@ -3,6 +3,10 @@ BeWake/dist/
 BeWake/src/BeWake
 BeWake/src/objects.*
 BeWake/tests/bewake-engine-test
+BinaryClock/dist/
+BinaryClock/src/BinaryClock
+BinaryClock/src/objects.*
+BinaryClock/tests/binaryclock-test
 Space/dist/
 Space/src/Space
 Space/src/objects.*

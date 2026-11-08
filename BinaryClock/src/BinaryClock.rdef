@@ -1,0 +1,15 @@
+resource app_signature "application/x-vnd.BinaryClockScreenSaver";
+
+resource app_version {
+	major = 1,
+	middle = 0,
+	minor = 0,
+
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+
+	short_info = "BinaryClock screen saver",
+	long_info = "BinaryClock 1.0.0, a binary-coded decimal clock for Haiku"
+};
+
+resource app_flags B_SINGLE_LAUNCH;
